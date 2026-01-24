@@ -9,7 +9,7 @@ class EmailQueueService {
     this.processingInterval = null;
     this.rateLimitInterval = 60000; // 1 minute in milliseconds
     this.emailsSentInInterval = 0;
-    this.maxEmailsPerInterval = 100;
+    this.maxEmailsPerInterval = 300; // Increased from 100 to 300 emails per hour
   }
 
   /**
