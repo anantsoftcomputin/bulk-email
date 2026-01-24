@@ -1,5 +1,5 @@
-// API client for backend email service
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+// API client for Netlify Functions
+const API_BASE_URL = import.meta.env.PROD ? '/.netlify/functions' : 'http://localhost:8888/.netlify/functions';
 
 class EmailAPI {
   /**
@@ -9,7 +9,7 @@ class EmailAPI {
    * @returns {Promise<Object>}
    */
   async testSMTP(config, toEmail) {
-    const response = await fetch(`${API_BASE_URL}/email/test`, {
+    const response = await fetch(`${API_BASE_URL}/email-test`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -32,7 +32,7 @@ class EmailAPI {
    * @returns {Promise<Object>}
    */
   async verifySMTP(config) {
-    const response = await fetch(`${API_BASE_URL}/email/verify`, {
+    const response = await fetch(`${API_BASE_URL}/email-verify`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -56,7 +56,7 @@ class EmailAPI {
    * @returns {Promise<Object>}
    */
   async sendEmail(config, emailData) {
-    const response = await fetch(`${API_BASE_URL}/email/send`, {
+    const response = await fetch(`${API_BASE_URL}/email-send`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -81,7 +81,7 @@ class EmailAPI {
    * @returns {Promise<Object>}
    */
   async sendBulkEmails(config, emails, rateLimit = 100) {
-    const response = await fetch(`${API_BASE_URL}/email/send-bulk`, {
+    const response = await fetch(`${API_BASE_URL}/email-send-bulk`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

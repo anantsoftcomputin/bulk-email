@@ -1,0 +1,9 @@
+{
+  "name": "email-functions",
+  "version": "1.0.0",
+  "description": "Netlify Functions for Bulk Email Sender",
+  "main": "index.js",
+  "dependencies": {
+    "nodemailer": "^6.9.16"
+  }
+}
