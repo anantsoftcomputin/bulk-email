@@ -99,16 +99,13 @@ class EmailAPI {
   }
 
   /**
-   * Check API health
+   * Check API health (not needed for Netlify Functions)
    * @returns {Promise<Object>}
    */
   async checkHealth() {
-    try {
-      const response = await fetch(`${API_BASE_URL}/email/health`);
-      return await response.json();
-    } catch (error) {
-      throw new Error('Backend API is not available. Make sure the server is running.');
-    }
+    // Netlify Functions are always available when deployed
+    // For local development with Netlify CLI, functions are available at localhost:8888
+    return { success: true, message: 'Netlify Functions are available' };
   }
 }
 

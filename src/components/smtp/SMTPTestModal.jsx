@@ -32,11 +32,6 @@ const SMTPTestModal = ({ isOpen, onClose, smtpConfig }) => {
       return;
     }
 
-    if (!backendAvailable) {
-      toast.error('Backend server is not running. Please start it first.');
-      return;
-    }
-
     setTesting(true);
 
     try {
@@ -65,34 +60,13 @@ const SMTPTestModal = ({ isOpen, onClose, smtpConfig }) => {
     >
       <div className="space-y-6">
         {/* Backend Status */}
-        {backendAvailable === false && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-            <div className="flex gap-3">
-              <Server className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-              <div className="text-sm text-red-800">
-                <p className="font-medium mb-1">Backend Server Not Running</p>
-                <p className="mb-2">
-                  The backend API server is not available. To send real emails:
-                </p>
-                <ol className="list-decimal ml-4 space-y-1">
-                  <li>Open a new terminal</li>
-                  <li>Navigate to: <code className="bg-red-100 px-1 rounded">cd server</code></li>
-                  <li>Install dependencies: <code className="bg-red-100 px-1 rounded">npm install</code></li>
-                  <li>Start server: <code className="bg-red-100 px-1 rounded">npm run dev</code></li>
-                </ol>
-                <p className="mt-2">Server should run on: <strong>http://localhost:3001</strong></p>
-              </div>
-            </div>
-          </div>
-        )}
-
         {backendAvailable && (
           <div className="bg-green-50 border border-green-200 rounded-lg p-4">
             <div className="flex gap-3">
               <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
               <div className="text-sm text-green-800">
-                <p className="font-medium">✓ Backend Server Connected</p>
-                <p>Ready to send test emails via SMTP</p>
+                <p className="font-medium">✓ Email Service Ready</p>
+                <p>Powered by Netlify Functions - ready to send test emails via SMTP</p>
               </div>
             </div>
           </div>
@@ -105,8 +79,8 @@ const SMTPTestModal = ({ isOpen, onClose, smtpConfig }) => {
             <div className="text-sm text-blue-800">
               <p className="font-medium mb-1">How It Works</p>
               <p>
-                Test emails are sent through the Node.js backend server using Nodemailer. 
-                The backend handles SMTP connections securely and returns the result.
+                Test emails are sent through serverless functions using Nodemailer. 
+                Your SMTP credentials are used securely to send the test email.
               </p>
             </div>
           </div>
@@ -139,15 +113,20 @@ const SMTPTestModal = ({ isOpen, onClose, smtpConfig }) => {
           help="Enter the email address where you want to receive the test email"
         />
 
-        {/* Backend Implementation Guide */}
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-          <div className="text-sm text-gray-700">
-            <p className="font-medium mb-2">Backend Server Details:</p>
-            <ul className="space-y-1 text-xs">
-              <li>• Location: <code className="bg-gray-200 px-1 rounded">/server</code></li>
-              <li>• Technology: Node.js + Express + Nodemailer</li>
-              <li>• Port: 3001</li>
-              <li>• Supports: Gmail, Outlook, Custom SMTP</li>
+        {/* Action Buttons */}
+        <div className="flex gap-3 justify-end">
+          <Button variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            onClick={handleTest}
+            disabled={testing || !testEmail}
+            icon={<Send className="w-4 h-4" />}
+          >
+            {testing ? 'Sending...' : 'Send Test Email'}
+          </Button>
+        </div>
             </ul>
           </div>
         </div>
