@@ -1,0 +1,192 @@
+import React, { useState, useEffect } from 'react';
+import { ArrowRight, ArrowLeft, Check, Mail, Users, FileText, Eye, Calendar } from 'lucide-react';
+import Button from '../common/Button';
+import Modal from '../common/Modal';
+import { useCampaignStore } from '../../store/campaignStore.db';
+import { useContactStore } from '../../store/contactStore.db';
+import { useGroupStore } from '../../store/groupStore';
+import { useTemplateStore } from '../../store/templateStore.db';
+import { dbHelpers } from '../../db/database';
+import toast from 'react-hot-toast';
+
+const STEPS = [
+  { id: 1, name: 'Basic Info', icon: Mail },
+  { id: 2, name: 'Select Template', icon: FileText },
+  { id: 3, name: 'Choose Recipients', icon: Users },
+  { id: 4, name: 'Schedule & Review', icon: Eye },
+];
+
+const CampaignWizard = ({ isOpen, onClose }) => {
+  const [currentStep, setCurrentStep] = useState(1);
+  const [formData, setFormData] = useState({
+    name: '',
+    subject: '',
+    previewText: '',
+    templateId: null,
+    recipientType: 'contacts', // 'contacts' or 'groups'
+    selectedContacts: [],
+    selectedGroups: [],
+    scheduleType: 'immediate', // 'immediate' or 'scheduled'
+    scheduledDate: '',
+    scheduledTime: '',
+  });
+
+  const { addCampaign, initializeCampaigns } = useCampaignStore();
+  const { contacts, initializeContacts } = useContactStore();
+  const { groups, initializeGroups } = useGroupStore();
+  const { templates, initializeTemplates } = useTemplateStore();
+
+  const [selectedTemplate, setSelectedTemplate] = useState(null);
+  const [recipientCount, setRecipientCount] = useState(0);
+
+  useEffect(() => {
+    if (isOpen) {
+      initializeContacts();
+      initializeGroups();
+      initializeTemplates();
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (formData.templateId) {
+      const template = templates.find(t => t.id === formData.templateId);
+      setSelectedTemplate(template);
+    }
+  }, [formData.templateId, templates]);
+
+  useEffect(() => {
+    calculateRecipientCount();
+  }, [formData.selectedContacts, formData.selectedGroups, formData.recipientType]);
+
+  const calculateRecipientCount = async () => {
+    if (formData.recipientType === 'contacts') {
+      setRecipientCount(formData.selectedContacts.length);
+    } else {
+      let count = 0;
+      for (const groupId of formData.selectedGroups) {
+        const groupContacts = await dbHelpers.getGroupContacts(groupId);
+        count += groupContacts.length;
+      }
+      setRecipientCount(count);
+    }
+  };
+
+  const calculateRecipientCount = async () => {
+    if (formData.recipientType === 'contacts') {
+      setRecipientCount(formData.selectedContacts.length);
+    } else {
+      let count = 0;
+      for (const groupId of formData.selectedGroups) {
+        const groupContacts = await dbHelpers.getGroupContacts(groupId);
+        count += groupContacts.length;
+      }
+      setRecipientCount(count);
+    }
+  };
+
+  const handleNext = () => {
+    if (validateStep()) {
+      setCurrentStep(currentStep + 1);
+    }
+  };
+
+  const handlePrevious = () => {
+    setCurrentStep(currentStep - 1);
+  };
+
+  const validateStep = () => {
+    switch (currentStep) {
+      case 1:
+        if (!formData.name || !formData.subject) {
+          toast.error('Please fill in campaign name and subject');
+          return false;
+        }
+        return true;
+      case 2:
+        if (!formData.templateId) {
+          toast.error('Please select a template');
+          return false;
+        }
+        return true;
+      case 3:
+        if (formData.recipientType === 'contacts' && formData.selectedContacts.length === 0) {
+          toast.error('Please select at least one contact');
+          return false;
+        }
+        if (formData.recipientType === 'groups' && formData.selectedGroups.length === 0) {
+          toast.error('Please select at least one group');
+          return false;
+        }
+        return true;
+      default:
+        return true;
+    }
+  };
+    if (!formData.name || !formData.subject) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    try {
+      await addCampaign({
+        ...formData,
+        status: 'draft',
+        stats: {
+          total: 0,
+          sent: 0,
+          delivered: 0,
+          opened: 0,
+          clicked: 0,
+          bounced: 0,
+          failed: 0,
+        },
+      });
+      toast.success('Campaign created successfully');
+      onClose();
+    } catch (error) {
+      toast.error('Failed to create campaign');
+    }
+  };
+
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Create Campaign"
+      size="lg"
+    >
+      <div className="space-y-4">
+        <Input
+          label="Campaign Name"
+          value={formData.name}
+          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+          placeholder="e.g., Q1 Newsletter"
+          required
+        />
+        <Input
+          label="Subject Line"
+          value={formData.subject}
+          onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
+          placeholder="Your email subject"
+          required
+        />
+        <Input
+          label="Preview Text"
+          value={formData.previewText}
+          onChange={(e) => setFormData({ ...formData, previewText: e.target.value })}
+          placeholder="Text shown in inbox preview"
+        />
+        <div className="flex justify-end space-x-2 pt-4">
+          <Button variant="ghost" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button onClick={handleSubmit}>
+            Create Campaign
+          </Button>
+        </div>
+      </div>
+    </Modal>
+  );
+};
+
+export default CampaignWizard;
