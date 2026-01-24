@@ -2,14 +2,14 @@ import React, { useState } from 'react';
 import Modal from '../common/Modal';
 import Input from '../common/Input';
 import Button from '../common/Button';
-import { Send, AlertCircle, CheckCircle, Server } from 'lucide-react';
+import { Send, AlertCircle, CheckCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import emailAPI from '../../api/emailAPI';
 
 const SMTPTestModal = ({ isOpen, onClose, smtpConfig }) => {
   const [testEmail, setTestEmail] = useState('');
   const [testing, setTesting] = useState(false);
-  const [backendAvailable, setBackendAvailable] = useState(null);
+  const [backendAvailable, setBackendAvailable] = useState(true);
 
   React.useEffect(() => {
     if (isOpen) {
@@ -122,23 +122,6 @@ const SMTPTestModal = ({ isOpen, onClose, smtpConfig }) => {
             variant="primary"
             onClick={handleTest}
             disabled={testing || !testEmail}
-            icon={<Send className="w-4 h-4" />}
-          >
-            {testing ? 'Sending...' : 'Send Test Email'}
-          </Button>
-        </div>
-            </ul>
-          </div>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex justify-end gap-3">
-          <Button variant="outline" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button
-            onClick={handleTest}
-            disabled={testing || !testEmail || !backendAvailable}
             icon={<Send className="w-4 h-4" />}
           >
             {testing ? 'Sending...' : 'Send Test Email'}
