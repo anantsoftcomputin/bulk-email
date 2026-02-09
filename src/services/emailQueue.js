@@ -12,6 +12,33 @@ class EmailQueueService {
     this.rateLimitInterval = 60000; // 1 minute in milliseconds
     this.emailsSentInInterval = 0;
     this.maxEmailsPerInterval = 300; // Increased from 100 to 300 emails per hour
+    this.progressCallbacks = [];
+    this.currentEmail = null;
+    this.totalEmails = 0;
+    this.sentEmails = 0;
+  }
+
+  /**
+   * Subscribe to progress updates
+   */
+  onProgress(callback) {
+    this.progressCallbacks.push(callback);
+    return () => {
+      this.progressCallbacks = this.progressCallbacks.filter(cb => cb !== callback);
+    };
+  }
+
+  /**
+   * Emit progress update to all subscribers
+   */
+  emitProgress(data) {
+    this.progressCallbacks.forEach(callback => {
+      try {
+        callback(data);
+      } catch (err) {
+        console.error('Progress callback error:', err);
+      }
+    });
   }
 
   /**
