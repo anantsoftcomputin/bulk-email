@@ -34,7 +34,6 @@ const Dashboard = () => {
       icon: Users,
       gradient: 'from-blue-500 to-indigo-600',
       link: '/contacts',
-      change: '+12%'
     },
     {
       title: 'Total Campaigns',
@@ -42,7 +41,6 @@ const Dashboard = () => {
       icon: Send,
       gradient: 'from-emerald-500 to-green-600',
       link: '/campaigns',
-      change: '+8%'
     },
     {
       title: 'Active Campaigns',
@@ -50,7 +48,6 @@ const Dashboard = () => {
       icon: Zap,
       gradient: 'from-purple-500 to-pink-600',
       link: '/campaigns',
-      change: '+5%'
     },
     {
       title: 'Emails Sent',
@@ -58,7 +55,6 @@ const Dashboard = () => {
       icon: Mail,
       gradient: 'from-orange-500 to-red-600',
       link: '/analytics',
-      change: '+23%'
     },
   ];
 
@@ -109,9 +105,6 @@ const Dashboard = () => {
                   <div className={`w-14 h-14 bg-gradient-to-br ${stat.gradient} rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform`}>
                     <Icon className="w-7 h-7 text-white" strokeWidth={2.5} />
                   </div>
-                  <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">
-                    {stat.change}
-                  </span>
                 </div>
                 <p className="text-sm font-bold text-gray-500 uppercase tracking-wide mb-1">{stat.title}</p>
                 <p className="text-3xl font-bold text-gray-900">{stat.value}</p>

@@ -3,6 +3,7 @@ import { db, dbHelpers } from '../db/database';
 import toast from 'react-hot-toast';
 import emailAPI from '../api/emailAPI';
 import { applyTracking } from '../utils/trackingHelpers';
+import { auth } from '../config/firebase';
 
 class EmailQueueService {
   constructor() {
@@ -181,8 +182,9 @@ class EmailQueueService {
       let trackedBody = queueItem.body;
       if (queueItem.campaignId && queueItem.contactId) {
         try {
-          trackedBody = applyTracking(queueItem.body, queueItem.campaignId, queueItem.contactId);
-          console.log('Tracking injected for:', queueItem.email);
+          const currentUserId = auth.currentUser?.uid || '';
+          trackedBody = applyTracking(queueItem.body, queueItem.campaignId, queueItem.contactId, currentUserId);
+          console.log('Tracking injected for:', queueItem.email, 'userId:', currentUserId);
         } catch (trackingErr) {
           console.warn('Failed to inject tracking, sending without tracking:', trackingErr.message);
         }

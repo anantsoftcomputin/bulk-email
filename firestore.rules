@@ -1,0 +1,40 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ─── Per-user data isolation ──────────────────────────────────
+    // Each user can ONLY read/write their own data under users/{userId}/*
+    match /users/{userId}/{collection}/{docId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // ─── Tracking events (written by server functions) ────────────
+    // Allow server (Netlify functions) to write tracking events under any user.
+    // Client-side: a user can only read their own tracking events.
+    match /users/{userId}/trackingEvents/{eventId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if true;  // Netlify functions write without user auth context
+    }
+
+    // ─── Campaign stats (updated by tracking functions) ───────────
+    // Allow unauthenticated updates to campaign docs ONLY for stats fields.
+    // This lets tracking functions increment stats.opened / stats.clicked.
+    match /users/{userId}/campaigns/{campaignId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if request.auth != null && request.auth.uid == userId;
+      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stats']);
+    }
+
+    // Fallback global trackingEvents (for backwards compatibility)
+    match /trackingEvents/{eventId} {
+      allow write: if true;
+      allow read: if request.auth != null;
+    }
+
+    // Block everything else
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
