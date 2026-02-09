@@ -12,10 +12,17 @@ import { db } from '../db/database';
 const Campaigns = () => {
   const navigate = useNavigate();
   const [showWizard, setShowWizard] = useState(false);
-  const { campaigns, initializeCampaigns, deleteCampaign, updateCampaign } = useCampaignStore();
+  const { campaigns, initializeCampaigns, deleteCampaign, updateCampaign, syncAllCampaignStats } = useCampaignStore();
 
   useEffect(() => {
-    initializeCampaigns();
+    const loadData = async () => {
+      await initializeCampaigns();
+      // Sync campaign stats from tracking events
+      if (syncAllCampaignStats) {
+        await syncAllCampaignStats();
+      }
+    };
+    loadData();
   }, []);
 
   const updateCampaignStatus = async (campaignId, status) => {
@@ -82,6 +89,18 @@ const Campaigns = () => {
           );
           
           console.log(`Added ${queuedCount} emails to queue`);
+          
+          // Update campaign stats with sent count
+          const updatedStats = {
+            ...campaign.stats,
+            sent: (campaign.stats?.sent || 0) + queuedCount,
+            total: queuedCount,
+          };
+          await updateCampaign(campaignId, { 
+            stats: updatedStats,
+            sentAt: new Date().toISOString()
+          });
+          
           toast.success(`Campaign started! ${queuedCount} emails added to queue`);
           
           // Start processing if not already running
@@ -89,6 +108,9 @@ const Campaigns = () => {
             emailQueueService.startProcessing();
             console.log('Email queue processor started');
           }
+          
+          // Refresh campaigns to show updated stats
+          await initializeCampaigns();
         }
       }
     } catch (error) {

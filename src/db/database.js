@@ -696,6 +696,28 @@ export const dbHelpers = {
       }
     }
   },
+
+  // ── Tracking Events ───────────────────────────────────────────
+  async getTrackingEvents(campaignId) {
+    try {
+      const snap = await getDocs(userCol('trackingEvents'));
+      const events = docsToArray(snap);
+      // Filter by campaignId if provided
+      if (campaignId) {
+        return events.filter(
+          e => e.campaignId === campaignId || String(e.campaignId) === String(campaignId)
+        );
+      }
+      return events;
+    } catch (error) {
+      console.error('Error getting tracking events:', error);
+      return [];
+    }
+  },
+
+  async getTrackingEventsByCampaign(campaignId) {
+    return this.getTrackingEvents(campaignId);
+  },
 };
 
 // ─── Initialize sample data (once per user) ─────────────────────────────────

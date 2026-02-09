@@ -15,7 +15,7 @@ import { db, dbHelpers } from '../db/database';
 import { format, subDays, startOfDay, endOfDay, isWithinInterval, parseISO } from 'date-fns';
 
 const Dashboard = () => {
-  const { campaigns, initializeCampaigns } = useCampaignStore();
+  const { campaigns, initializeCampaigns, syncAllCampaignStats } = useCampaignStore();
   const { contacts, initializeContacts } = useContactStore();
   const { templates, initializeTemplates } = useTemplateStore();
 
@@ -32,6 +32,12 @@ const Dashboard = () => {
           initializeContacts(),
           initializeTemplates(),
         ]);
+        
+        // Sync campaign stats from tracking events
+        if (syncAllCampaignStats) {
+          await syncAllCampaignStats();
+        }
+        
         const qs = await dbHelpers.getEmailQueueStats();
         setQueueStats(qs);
         try {

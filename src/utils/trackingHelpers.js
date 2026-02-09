@@ -5,9 +5,13 @@
  * in outgoing campaign emails.
  */
 
+// In development, use the Express backend for tracking
+// In production, use Netlify Functions
 const TRACKING_BASE = import.meta.env.PROD
   ? '/.netlify/functions'
-  : 'http://localhost:8888/.netlify/functions';
+  : import.meta.env.DEV
+    ? 'http://localhost:3001/api'  // Express backend for dev
+    : 'http://localhost:8888/.netlify/functions';  // Netlify dev (if using netlify dev)
 
 /**
  * Generate a unique tracking token from campaign, recipient and user IDs

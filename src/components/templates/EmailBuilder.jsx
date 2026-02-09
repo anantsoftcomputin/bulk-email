@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import {
   DndContext,
   closestCenter,
@@ -588,12 +588,12 @@ const EmailBuilder = ({ template, onSave, onClose }) => {
     pushHistory();
   };
 
-  const updateBlockProperties = (properties) => {
+  const updateBlockProperties = useCallback((properties) => {
     setBlocks(prev =>
       prev.map(b => b.id === selectedBlockId ? { ...b, properties } : b)
     );
     // Debounce history push
-  };
+  }, [selectedBlockId]);
 
   // Apply starter template
   const applyStarter = (starter) => {
@@ -643,7 +643,10 @@ const EmailBuilder = ({ template, onSave, onClose }) => {
     toast.success('HTML exported!');
   };
 
-  const selectedBlock = blocks.find(b => b.id === selectedBlockId);
+  const selectedBlock = useMemo(
+    () => blocks.find(b => b.id === selectedBlockId),
+    [blocks, selectedBlockId]
+  );
 
   // ─── Template Selector (shown on first open if no template) ───
   if (showStarters) {

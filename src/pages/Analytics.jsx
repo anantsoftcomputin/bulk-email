@@ -17,7 +17,7 @@ import { format, subDays, startOfDay, endOfDay, isWithinInterval, parseISO } fro
 const COLORS = ['#3b82f6', '#10b981', '#8b5cf6', '#f59e0b', '#ef4444', '#06b6d4'];
 
 const Analytics = () => {
-  const { campaigns, initializeCampaigns } = useCampaignStore();
+  const { campaigns, initializeCampaigns, syncAllCampaignStats } = useCampaignStore();
   const { contacts, initializeContacts } = useContactStore();
   const { templates, initializeTemplates } = useTemplateStore();
 
@@ -36,6 +36,11 @@ const Analytics = () => {
           initializeContacts(),
           initializeTemplates(),
         ]);
+
+        // Sync campaign stats from tracking events
+        if (syncAllCampaignStats) {
+          await syncAllCampaignStats();
+        }
 
         // Load email queue stats
         const qStats = await dbHelpers.getEmailQueueStats();

@@ -125,4 +125,73 @@ router.get('/health', (req, res) => {
   });
 });
 
+/**
+ * GET /api/track-open
+ * Email open tracking pixel
+ * Returns a 1x1 transparent GIF and records the open event
+ */
+router.get('/track-open', async (req, res) => {
+  // 1x1 transparent GIF in base64
+  const TRANSPARENT_GIF = Buffer.from(
+    'R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
+    'base64'
+  );
+
+  const headers = {
+    'Content-Type': 'image/gif',
+    'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+    'Pragma': 'no-cache',
+    'Expires': '0',
+  };
+
+  try {
+    const tk = req.query.tk;
+    if (tk) {
+      const decoded = JSON.parse(Buffer.from(tk, 'base64').toString());
+      const { c: campaignId, r: recipientId, u: userId } = decoded;
+
+      console.log(`[OPEN] Campaign: ${campaignId}, Recipient: ${recipientId}, User: ${userId || 'unknown'}`);
+
+      // TODO: Record tracking event in Firestore
+      // For now, just log it
+    }
+  } catch (err) {
+    console.error('Tracking error:', err.message);
+  }
+
+  // Always return the pixel, even on errors
+  res.set(headers).send(TRANSPARENT_GIF);
+});
+
+/**
+ * GET /api/track-click  
+ * Email click tracking redirect
+ * Records the click event and redirects to the original URL
+ */
+router.get('/track-click', async (req, res) => {
+  const url = req.query.url;
+  const tk = req.query.tk;
+
+  if (!url) {
+    return res.status(400).json({ error: 'Missing redirect URL' });
+  }
+
+  try {
+    if (tk) {
+      const decoded = JSON.parse(Buffer.from(tk, 'base64').toString());
+      const { c: campaignId, r: recipientId, u: userId } = decoded;
+
+      console.log(`[CLICK] Campaign: ${campaignId}, Recipient: ${recipientId}, User: ${userId || 'unknown'}, URL: ${url}`);
+
+      // TODO: Record tracking event in Firestore
+      // For now, just log it
+    }
+  } catch (err) {
+    console.error('Click tracking error:', err.message);
+  }
+
+  // Always redirect to the original URL
+  res.redirect(decodeURIComponent(url));
+});
+
 module.exports = router;
