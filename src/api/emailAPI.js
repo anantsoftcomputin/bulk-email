@@ -1,5 +1,10 @@
-// API client for Netlify Functions
-const API_BASE_URL = import.meta.env.PROD ? '/.netlify/functions' : 'http://localhost:8888/.netlify/functions';
+// API client that works in both dev and production
+// Development: Uses Node.js Express server (localhost:3001)
+// Production: Uses Netlify Functions (/.netlify/functions)
+const isDev = import.meta.env.DEV;
+const API_BASE_URL = isDev 
+  ? (import.meta.env.VITE_API_URL || 'http://localhost:3001/api')
+  : '/.netlify/functions';
 
 class EmailAPI {
   /**
@@ -9,7 +14,8 @@ class EmailAPI {
    * @returns {Promise<Object>}
    */
   async testSMTP(config, toEmail) {
-    const response = await fetch(`${API_BASE_URL}/email-test`, {
+    const endpoint = isDev ? `${API_BASE_URL}/email/test` : `${API_BASE_URL}/email-test`;
+    const response = await fetch(endpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -32,7 +38,8 @@ class EmailAPI {
    * @returns {Promise<Object>}
    */
   async verifySMTP(config) {
-    const response = await fetch(`${API_BASE_URL}/email-verify`, {
+    const endpoint = isDev ? `${API_BASE_URL}/email/verify` : `${API_BASE_URL}/email-verify`;
+    const response = await fetch(endpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -56,7 +63,8 @@ class EmailAPI {
    * @returns {Promise<Object>}
    */
   async sendEmail(config, emailData) {
-    const response = await fetch(`${API_BASE_URL}/email-send`, {
+    const endpoint = isDev ? `${API_BASE_URL}/email/send` : `${API_BASE_URL}/email-send`;
+    const response = await fetch(endpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -81,7 +89,8 @@ class EmailAPI {
    * @returns {Promise<Object>}
    */
   async sendBulkEmails(config, emails, rateLimit = 100) {
-    const response = await fetch(`${API_BASE_URL}/email-send-bulk`, {
+    const endpoint = isDev ? `${API_BASE_URL}/email/send-bulk` : `${API_BASE_URL}/email-send-bulk`;
+    const response = await fetch(endpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -99,13 +108,21 @@ class EmailAPI {
   }
 
   /**
-   * Check API health (not needed for Netlify Functions)
+   * Check API health
    * @returns {Promise<Object>}
    */
   async checkHealth() {
-    // Netlify Functions are always available when deployed
-    // For local development with Netlify CLI, functions are available at localhost:8888
-    return { success: true, message: 'Netlify Functions are available' };
+    if (!isDev) {
+      // In production, Netlify Functions are always available
+      return { success: true, message: 'Netlify Functions are available' };
+    }
+    
+    try {
+      const response = await fetch(`${API_BASE_URL}/email/health`);
+      return await response.json();
+    } catch (error) {
+      return { success: false, message: 'Backend server is not running' };
+    }
   }
 }
 

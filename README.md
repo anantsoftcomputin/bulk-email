@@ -84,29 +84,65 @@ For detailed database documentation, see [DATABASE.md](DATABASE.md).
 
 ## 📦 Installation
 
+### Quick Start (Development)
+
 1. **Clone the repository**:
 ```bash
 git clone <repository-url>
 cd bulk-email-sender
 ```
 
-2. **Install dependencies**:
+2. **Install frontend dependencies**:
 ```bash
 npm install
 ```
 
-3. **Create environment file**:
-Create a `.env` file in the root directory:
-```env
-VITE_API_URL=http://localhost:3000/api
+3. **Install backend dependencies**:
+```bash
+cd server
+npm install
+cd ..
 ```
 
-4. **Start development server**:
+4. **Create environment file**:
+Create a `.env` file in the root directory:
+```env
+VITE_API_URL=http://localhost:3001/api
+
+# Firebase Configuration
+VITE_FIREBASE_API_KEY=your-firebase-api-key
+VITE_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=your-project-id
+VITE_FIREBASE_STORAGE_BUCKET=your-project.firebasestorage.app
+VITE_FIREBASE_MESSAGING_SENDER_ID=your-sender-id
+VITE_FIREBASE_APP_ID=your-app-id
+VITE_FIREBASE_MEASUREMENT_ID=your-measurement-id
+```
+
+5. **Start the application**:
+
+**Terminal 1** - Start backend server:
+```bash
+cd server
+npm start
+```
+
+**Terminal 2** - Start frontend dev server:
 ```bash
 npm run dev
 ```
 
 The application will be available at `http://localhost:5173`
+
+### 🚀 Deploy to Netlify
+
+For production deployment to Netlify, see **[DEPLOYMENT.md](DEPLOYMENT.md)** for complete instructions.
+
+**TL;DR**: Push to GitHub → Connect to Netlify → Set environment variables → Deploy!
+
+The app automatically uses:
+- **Local Dev**: Node.js Express backend (`localhost:3001`)
+- **Production**: Netlify Serverless Functions (`/.netlify/functions`)
 
 ## 🏗️ Project Structure
 

@@ -8,6 +8,7 @@ import { useAuthStore } from './store/authStore';
 import AuthGuard from './components/auth/AuthGuard';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import LandingPage from './pages/LandingPage';
 import DashboardLayout from './components/layout/DashboardLayout';
 import Dashboard from './pages/Dashboard';
 import Contacts from './pages/Contacts';
@@ -67,12 +68,13 @@ function App() {
       <Router>
         <Routes>
           {/* Public routes */}
+          <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
 
           {/* Protected routes */}
           <Route
-            path="/"
+            path="/dashboard"
             element={
               <AuthGuard>
                 {!dbInitialized ? (
@@ -100,7 +102,7 @@ function App() {
           </Route>
 
           {/* Catch-all */}
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </Router>
       <Toaster

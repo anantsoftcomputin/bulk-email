@@ -12,14 +12,14 @@ const Header = () => {
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
+    navigate('/');
   };
 
   const userMenuItems = [
     {
       label: 'Settings',
       icon: <Settings className="w-4 h-4" />,
-      onClick: () => navigate('/settings'),
+      onClick: () => navigate('/dashboard/settings'),
     },
     {
       label: 'Logout',
@@ -39,7 +39,7 @@ const Header = () => {
           >
             <Menu className="w-6 h-6 text-gray-600" />
           </button>
-          <Link to="/" className="flex items-center space-x-3 lg:hidden">
+          <Link to="/dashboard" className="flex items-center space-x-3 lg:hidden">
             <div className="w-9 h-9 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
               <Zap className="w-5 h-5 text-white" />
             </div>

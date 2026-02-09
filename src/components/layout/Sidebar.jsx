@@ -21,15 +21,15 @@ const Sidebar = () => {
   const { sidebarCollapsed, toggleSidebar } = useUIStore();
 
   const menuItems = [
-    { path: '/', icon: LayoutDashboard, label: 'Dashboard' },
-    { path: '/contacts', icon: Users, label: 'Contacts' },
-    { path: '/groups', icon: UsersRound, label: 'Audiences' },
-    { path: '/templates', icon: FileText, label: 'Templates' },
-    { path: '/campaigns', icon: Send, label: 'Campaigns' },
-    { path: '/email-queue', icon: ListOrdered, label: 'Email Queue' },
-    { path: '/analytics', icon: BarChart3, label: 'Reports' },
-    { path: '/smtp-settings', icon: Mail, label: 'SMTP Config' },
-    { path: '/settings', icon: Settings, label: 'Settings' },
+    { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+    { path: '/dashboard/contacts', icon: Users, label: 'Contacts' },
+    { path: '/dashboard/groups', icon: UsersRound, label: 'Audiences' },
+    { path: '/dashboard/templates', icon: FileText, label: 'Templates' },
+    { path: '/dashboard/campaigns', icon: Send, label: 'Campaigns' },
+    { path: '/dashboard/email-queue', icon: ListOrdered, label: 'Email Queue' },
+    { path: '/dashboard/analytics', icon: BarChart3, label: 'Reports' },
+    { path: '/dashboard/smtp-settings', icon: Mail, label: 'SMTP Config' },
+    { path: '/dashboard/settings', icon: Settings, label: 'Settings' },
   ];
 
   return (
@@ -95,6 +95,7 @@ const Sidebar = () => {
                   <li key={item.path}>
                     <NavLink
                       to={item.path}
+                      end={item.path === '/dashboard'}
                       className={({ isActive }) =>
                         `group flex items-center px-3.5 py-3 rounded-xl transition-all duration-200 ${
                           isActive

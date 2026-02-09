@@ -32,6 +32,12 @@ service cloud.firestore {
       allow read: if request.auth != null;
     }
 
+    // ─── Enquiries (from landing page contact form) ─────────────
+    match /enquiries/{enquiryId} {
+      allow create: if true;  // Anyone can submit an enquiry
+      allow read: if request.auth != null;  // Only authenticated users can read
+    }
+
     // Block everything else
     match /{document=**} {
       allow read, write: if false;

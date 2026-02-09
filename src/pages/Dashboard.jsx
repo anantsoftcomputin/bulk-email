@@ -146,7 +146,7 @@ const Dashboard = () => {
           </p>
         </div>
         <Link
-          to="/campaigns/new"
+          to="/dashboard/campaigns/new"
           className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl transition-all duration-200 font-semibold flex items-center gap-2"
         >
           <Zap size={20} />
@@ -317,7 +317,7 @@ const Dashboard = () => {
       <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold text-gray-900">Recent Campaigns</h2>
-          <Link to="/campaigns" className="text-sm font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1">
+          <Link to="/dashboard/campaigns" className="text-sm font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1">
             View All
             <TrendingUp size={16} />
           </Link>
@@ -330,7 +330,7 @@ const Dashboard = () => {
             <h3 className="text-lg font-semibold text-gray-900 mb-2">No campaigns yet</h3>
             <p className="text-gray-600 mb-6">Create your first campaign to get started!</p>
             <Link
-              to="/campaigns/new"
+              to="/dashboard/campaigns/new"
               className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl transition-all duration-200 font-semibold"
             >
               <Zap size={20} />
