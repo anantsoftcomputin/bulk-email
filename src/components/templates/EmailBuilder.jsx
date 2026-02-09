@@ -208,7 +208,7 @@ function BlockPreview({ block, settings }) {
 
 // ─── Property Panel ─────────────────────────────────────────────
 
-function PropertyPanel({ block, onChange, onInsertVariable }) {
+const PropertyPanel = React.memo(function PropertyPanel({ block, onChange, onInsertVariable }) {
   if (!block) {
     return (
       <div className="flex flex-col items-center justify-center h-full text-gray-400 p-6 text-center">
@@ -220,7 +220,9 @@ function PropertyPanel({ block, onChange, onInsertVariable }) {
   }
 
   const p = block.properties;
-  const update = (key, value) => onChange({ ...p, [key]: value });
+  const update = useCallback((key, value) => {
+    onChange({ ...p, [key]: value });
+  }, [p, onChange]);
 
   const Field = ({ label, children }) => (
     <div className="mb-3">
@@ -467,7 +469,7 @@ function PropertyPanel({ block, onChange, onInsertVariable }) {
     default:
       return <p className="text-sm text-gray-400 p-4">No properties available.</p>;
   }
-}
+});
 
 // ─── Main Email Builder ────────────────────────────────────────
 
