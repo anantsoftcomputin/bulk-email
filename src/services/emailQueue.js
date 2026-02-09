@@ -268,6 +268,9 @@ class EmailQueueService {
             sentAt: new Date().toISOString(),
           });
         }
+        
+        // Check if all emails for this campaign are sent
+        await this.checkCampaignCompletion(queueItem.campaignId);
       }
 
       this.emailsSentInInterval++;
@@ -308,6 +311,42 @@ class EmailQueueService {
         console.log(`Email failed after ${maxRetries} attempts`);
         await dbHelpers.updateEmailQueueStatus(queueItem.id, 'failed', error.message);
       }
+    }
+  }
+
+  /**
+   * Check if all emails for a campaign have been sent and update campaign status
+   */
+  async checkCampaignCompletion(campaignId) {
+    try {
+      // Get all queue items for this campaign
+      const allQueueItems = await db.emailQueue.toArray();
+      const campaignEmails = allQueueItems.filter(
+        item => item.campaignId === campaignId || String(item.campaignId) === String(campaignId)
+      );
+      
+      if (campaignEmails.length === 0) return;
+      
+      // Check if all are sent or failed (none pending or processing)
+      const allComplete = campaignEmails.every(
+        item => item.status === 'sent' || item.status === 'failed'
+      );
+      
+      if (allComplete) {
+        console.log(`✅ All emails sent for campaign ${campaignId}, updating status to 'sent'`);
+        
+        // Get campaign and update status
+        const campaign = await dbHelpers.getCampaignById(campaignId);
+        if (campaign && campaign.status === 'sending') {
+          await dbHelpers.updateCampaign(campaignId, {
+            status: 'sent',
+            sentAt: new Date().toISOString(),
+          });
+          console.log(`Campaign ${campaignId} marked as sent`);
+        }
+      }
+    } catch (error) {
+      console.error('Error checking campaign completion:', error);
     }
   }
 
