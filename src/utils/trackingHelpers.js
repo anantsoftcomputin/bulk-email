@@ -5,13 +5,30 @@
  * in outgoing campaign emails.
  */
 
-// In development, use the Express backend for tracking
-// In production, use Netlify Functions
-const TRACKING_BASE = import.meta.env.PROD
-  ? '/.netlify/functions'
-  : import.meta.env.DEV
-    ? 'http://localhost:3001/api'  // Express backend for dev
-    : 'http://localhost:8888/.netlify/functions';  // Netlify dev (if using netlify dev)
+// Get the base URL for tracking endpoints
+// In production: Use full Netlify URL so email clients can load tracking pixels
+// In development: Use localhost Express backend
+const getTrackingBase = () => {
+  if (import.meta.env.PROD) {
+    // Production: Use full URL from environment or detect from window
+    const appUrl = import.meta.env.VITE_APP_URL;
+    if (appUrl) {
+      return `${appUrl}/.netlify/functions`;
+    }
+    // Fallback: Try to detect from window.location (when running in browser)
+    if (typeof window !== 'undefined') {
+      return `${window.location.origin}/.netlify/functions`;
+    }
+    // Last resort: relative URL (won't work in emails but better than nothing)
+    return '/.netlify/functions';
+  } else if (import.meta.env.DEV) {
+    return 'http://localhost:3001/api';  // Express backend for dev
+  } else {
+    return 'http://localhost:8888/.netlify/functions';  // Netlify dev
+  }
+};
+
+const TRACKING_BASE = getTrackingBase();
 
 /**
  * Generate a unique tracking token from campaign, recipient and user IDs
