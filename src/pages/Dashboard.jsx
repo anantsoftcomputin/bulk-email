@@ -51,6 +51,22 @@ const Dashboard = () => {
       }
     };
     load();
+    
+    // Auto-refresh analytics every 15 seconds
+    const refreshInterval = setInterval(async () => {
+      if (syncAllCampaignStats) {
+        await syncAllCampaignStats();
+      }
+      await initializeCampaigns();
+      const qs = await dbHelpers.getEmailQueueStats();
+      setQueueStats(qs);
+      try {
+        const events = await db.trackingEvents.toArray();
+        setTrackingEvents(events);
+      } catch { setTrackingEvents([]); }
+    }, 15000);
+    
+    return () => clearInterval(refreshInterval);
   }, []);
 
   // ─── Computed stats ────────────────────────────────────

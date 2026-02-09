@@ -130,7 +130,7 @@ class EmailQueueService {
       }
 
       // Get settings for rate limiting
-      const maxEmailsPerHour = await dbHelpers.getSetting('maxEmailsPerHour') || 100;
+      const maxEmailsPerHour = await dbHelpers.getSetting('maxEmailsPerHour') || 300;
       this.maxEmailsPerInterval = Math.floor(maxEmailsPerHour / 60); // Per minute
 
       // Check rate limit
@@ -139,19 +139,25 @@ class EmailQueueService {
         return;
       }
 
-      // Get pending emails
-      const batchSize = Math.min(5, this.maxEmailsPerInterval - this.emailsSentInInterval);
+      // Get pending emails - increased batch size for parallel processing
+      const batchSize = Math.min(10, this.maxEmailsPerInterval - this.emailsSentInInterval);
       const pendingEmails = await dbHelpers.getEmailQueuePending(batchSize);
 
       if (pendingEmails.length === 0) {
         return;
       }
 
-      console.log(`📧 Processing ${pendingEmails.length} emails from queue`);
+      // Update total count
+      const allPending = await dbHelpers.getEmailQueuePending(1000);
+      this.totalEmails = allPending.length;
 
-      // Process each email
-      for (const email of pendingEmails) {
-        await this.sendEmail(email);
+      console.log(`📧 Processing ${pendingEmails.length} emails from queue (${this.totalEmails} remaining)`);
+
+      // Process emails in parallel (3 at a time)
+      const concurrency = 3;
+      for (let i = 0; i < pendingEmails.length; i += concurrency) {
+        const batch = pendingEmails.slice(i, i + concurrency);
+        await Promise.all(batch.map(email => this.sendEmail(email)));
       }
     } catch (error) {
       console.error('Error processing email queue:', error);
@@ -163,7 +169,17 @@ class EmailQueueService {
    */
   async sendEmail(queueItem) {
     try {
+      this.currentEmail = queueItem.email;
       console.log('Sending email to:', queueItem.email);
+      
+      // Emit progress
+      this.emitProgress({
+        status: 'sending',
+        currentEmail: queueItem.email,
+        totalEmails: this.totalEmails,
+        sentEmails: this.sentEmails,
+        percentage: this.totalEmails > 0 ? Math.round((this.sentEmails / this.totalEmails) * 100) : 0
+      });
       
       // Update status to processing
       await dbHelpers.updateEmailQueueStatus(queueItem.id, 'processing');
@@ -228,10 +244,30 @@ class EmailQueueService {
       }
 
       this.emailsSentInInterval++;
+      this.sentEmails++;
       console.log(`✓ Email sent successfully to ${queueItem.email}`);
+      
+      // Emit success progress
+      this.emitProgress({
+        status: 'success',
+        currentEmail: queueItem.email,
+        totalEmails: this.totalEmails,
+        sentEmails: this.sentEmails,
+        percentage: this.totalEmails > 0 ? Math.round((this.sentEmails / this.totalEmails) * 100) : 0
+      });
       
     } catch (error) {
       console.error(`✗ Error sending email to ${queueItem.email}:`, error);
+      
+      // Emit error progress
+      this.emitProgress({
+        status: 'error',
+        currentEmail: queueItem.email,
+        error: error.message,
+        totalEmails: this.totalEmails,
+        sentEmails: this.sentEmails,
+        percentage: this.totalEmails > 0 ? Math.round((this.sentEmails / this.totalEmails) * 100) : 0
+      });
       
       // Get retry settings
       const maxRetries = await dbHelpers.getSetting('emailRetryAttempts') || 3;

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Play, Pause, Copy, Trash2, Send, Users, BarChart3, Calendar } from 'lucide-react';
 import { Button } from '../components/common/Button';
 import CampaignWizard from '../components/campaigns/CampaignWizard';
+import CampaignProgress from '../components/campaigns/CampaignProgress';
 import { useCampaignStore } from '../store/campaignStore.db';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
@@ -12,6 +13,8 @@ import { db } from '../db/database';
 const Campaigns = () => {
   const navigate = useNavigate();
   const [showWizard, setShowWizard] = useState(false);
+  const [showProgress, setShowProgress] = useState(false);
+  const [activeCampaignId, setActiveCampaignId] = useState(null);
   const { campaigns, initializeCampaigns, deleteCampaign, updateCampaign, syncAllCampaignStats } = useCampaignStore();
 
   useEffect(() => {
@@ -23,6 +26,16 @@ const Campaigns = () => {
       }
     };
     loadData();
+    
+    // Auto-refresh campaign stats every 30 seconds
+    const refreshInterval = setInterval(async () => {
+      if (syncAllCampaignStats) {
+        await syncAllCampaignStats();
+      }
+      await initializeCampaigns();
+    }, 30000);
+    
+    return () => clearInterval(refreshInterval);
   }, []);
 
   const updateCampaignStatus = async (campaignId, status) => {
@@ -102,6 +115,10 @@ const Campaigns = () => {
           });
           
           toast.success(`Campaign started! ${queuedCount} emails added to queue`);
+          
+          // Show progress modal
+          setActiveCampaignId(campaignId);
+          setShowProgress(true);
           
           // Start processing if not already running
           if (!emailQueueService.isProcessing) {
@@ -443,6 +460,19 @@ const Campaigns = () => {
         <CampaignWizard
           isOpen={showWizard}
           onClose={() => setShowWizard(false)}
+        />
+      )}
+      
+      {/* Campaign Progress Modal */}
+      {showProgress && activeCampaignId && (
+        <CampaignProgress
+          campaignId={activeCampaignId}
+          onClose={() => {
+            setShowProgress(false);
+            setActiveCampaignId(null);
+            // Refresh campaigns after closing progress
+            initializeCampaigns();
+          }}
         />
       )}
     </div>

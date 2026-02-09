@@ -60,6 +60,20 @@ const Analytics = () => {
       }
     };
     load();
+    
+    // Auto-refresh analytics every 15 seconds
+    const refreshInterval = setInterval(async () => {
+      if (syncAllCampaignStats) {
+        await syncAllCampaignStats();
+      }
+      await initializeCampaigns();
+      try {
+        const events = await db.trackingEvents.toArray();
+        setTrackingEvents(events);
+      } catch { setTrackingEvents([]); }
+    }, 15000);
+    
+    return () => clearInterval(refreshInterval);
   }, []);
 
   // ─── Derived real stats (merge campaign.stats + trackingEvents) ──
