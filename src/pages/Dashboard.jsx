@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Users, Send, Mail, TrendingUp, Eye, MousePointer, AlertCircle } from 'lucide-react';
+import { Users, Send, Mail, TrendingUp, Eye, MousePointer, AlertCircle, Zap, BarChart3, Clock, CheckCircle2 } from 'lucide-react';
 import Card from '../components/common/Card';
 import { useCampaignStore } from '../store/campaignStore.db';
 import { useContactStore } from '../store/contactStore.db';
@@ -32,29 +32,33 @@ const Dashboard = () => {
       title: 'Total Contacts',
       value: totalContacts.toLocaleString(),
       icon: Users,
-      color: 'bg-blue-500',
+      gradient: 'from-blue-500 to-indigo-600',
       link: '/contacts',
+      change: '+12%'
     },
     {
       title: 'Total Campaigns',
       value: totalCampaigns,
       icon: Send,
-      color: 'bg-green-500',
+      gradient: 'from-emerald-500 to-green-600',
       link: '/campaigns',
+      change: '+8%'
     },
     {
       title: 'Active Campaigns',
       value: activeCampaigns,
-      icon: TrendingUp,
-      color: 'bg-purple-500',
+      icon: Zap,
+      gradient: 'from-purple-500 to-pink-600',
       link: '/campaigns',
+      change: '+5%'
     },
     {
       title: 'Emails Sent',
       value: totalEmailsSent.toLocaleString(),
       icon: Mail,
-      color: 'bg-orange-500',
+      gradient: 'from-orange-500 to-red-600',
       link: '/analytics',
+      change: '+23%'
     },
   ];
 
@@ -64,25 +68,32 @@ const Dashboard = () => {
       value: `${avgOpenRate}%`,
       icon: Eye,
       color: 'text-blue-600',
+      bgColor: 'bg-blue-100',
     },
     {
       label: 'Click Rate',
       value: `${avgClickRate}%`,
       icon: MousePointer,
-      color: 'text-green-600',
+      color: 'text-emerald-600',
+      bgColor: 'bg-emerald-100',
     },
   ];
 
   const recentCampaigns = campaigns.slice(0, 5);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 animate-fade-in">
+      {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+        <div>
+          <h1 className="text-4xl font-bold text-gray-900 tracking-tight">Dashboard</h1>
+          <p className="text-gray-600 mt-2 font-medium">Welcome back! Here's what's happening today.</p>
+        </div>
         <Link
           to="/campaigns/new"
-          className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+          className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl transition-all duration-200 font-semibold flex items-center gap-2"
         >
+          <Zap size={20} />
           Create Campaign
         </Link>
       </div>
@@ -93,57 +104,65 @@ const Dashboard = () => {
           const Icon = stat.icon;
           return (
             <Link key={index} to={stat.link}>
-              <Card hover className="h-full">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">{stat.title}</p>
-                    <p className="text-3xl font-bold text-gray-900 mt-2">{stat.value}</p>
+              <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-lg hover:border-blue-200 transition-all duration-300 group h-full">
+                <div className="flex items-start justify-between mb-4">
+                  <div className={`w-14 h-14 bg-gradient-to-br ${stat.gradient} rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform`}>
+                    <Icon className="w-7 h-7 text-white" strokeWidth={2.5} />
                   </div>
-                  <div className={`${stat.color} p-3 rounded-lg`}>
-                    <Icon className="w-6 h-6 text-white" />
-                  </div>
+                  <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">
+                    {stat.change}
+                  </span>
                 </div>
-              </Card>
+                <p className="text-sm font-bold text-gray-500 uppercase tracking-wide mb-1">{stat.title}</p>
+                <p className="text-3xl font-bold text-gray-900">{stat.value}</p>
+              </div>
             </Link>
           );
         })}
       </div>
 
       {/* Performance Stats */}
-      <Card title="Performance Overview">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
+        <h2 className="text-2xl font-bold text-gray-900 mb-6">Performance Overview</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {performanceStats.map((stat, index) => {
             const Icon = stat.icon;
             return (
-              <div key={index} className="flex items-center space-x-4">
-                <Icon className={`w-8 h-8 ${stat.color}`} />
+              <div key={index} className="flex items-center space-x-5">
+                <div className={`w-16 h-16 ${stat.bgColor} rounded-2xl flex items-center justify-center`}>
+                  <Icon className={`w-8 h-8 ${stat.color}`} strokeWidth={2.5} />
+                </div>
                 <div>
-                  <p className="text-sm text-gray-600">{stat.label}</p>
-                  <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+                  <p className="text-sm font-bold text-gray-500 uppercase tracking-wide">{stat.label}</p>
+                  <p className="text-4xl font-bold text-gray-900 mt-1">{stat.value}</p>
                 </div>
               </div>
             );
           })}
         </div>
-      </Card>
+      </div>
 
       {/* Recent Campaigns */}
-      <Card
-        title="Recent Campaigns"
-        action={
-          <Link to="/campaigns" className="text-sm text-primary-600 hover:text-primary-700">
+      <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold text-gray-900">Recent Campaigns</h2>
+          <Link to="/campaigns" className="text-sm font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1">
             View All
+            <TrendingUp size={16} />
           </Link>
-        }
-      >
+        </div>
         {recentCampaigns.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
-            <AlertCircle className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-            <p>No campaigns yet. Create your first campaign to get started!</p>
+          <div className="text-center py-12">
+            <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <AlertCircle className="w-10 h-10 text-gray-400" />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">No campaigns yet</h3>
+            <p className="text-gray-600 mb-6">Create your first campaign to get started!</p>
             <Link
               to="/campaigns/new"
-              className="inline-block mt-4 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl transition-all duration-200 font-semibold"
             >
+              <Zap size={20} />
               Create Campaign
             </Link>
           </div>
@@ -153,34 +172,44 @@ const Dashboard = () => {
               <Link
                 key={campaign.id}
                 to={`/campaigns/${campaign.id}`}
-                className="block p-4 border border-gray-200 rounded-lg hover:border-primary-300 hover:shadow-sm transition"
+                className="block p-5 border border-gray-200 rounded-xl hover:border-blue-300 hover:shadow-md transition-all duration-200 group"
               >
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
-                    <h3 className="font-semibold text-gray-900">{campaign.name}</h3>
-                    <p className="text-sm text-gray-600 mt-1">{campaign.subject}</p>
-                    <p className="text-xs text-gray-500 mt-2">
-                      Created: {format(new Date(campaign.createdAt), 'MMM dd, yyyy')}
-                    </p>
+                    <h3 className="font-bold text-gray-900 text-lg group-hover:text-blue-600 transition-colors">{campaign.name}</h3>
+                    <p className="text-sm text-gray-600 mt-1 font-medium">{campaign.subject}</p>
+                    <div className="flex items-center gap-4 mt-3">
+                      <span className="text-xs text-gray-500 flex items-center gap-1">
+                        <Clock size={14} />
+                        {format(new Date(campaign.createdAt), 'MMM dd, yyyy')}
+                      </span>
+                    </div>
                   </div>
                   <div className="ml-4 text-right">
                     <span
-                      className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${
+                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wide shadow-sm mb-3 ${
                         campaign.status === 'sent'
-                          ? 'bg-green-100 text-green-800'
+                          ? 'bg-emerald-100 text-emerald-700 border border-emerald-200'
                           : campaign.status === 'sending'
-                          ? 'bg-blue-100 text-blue-800'
+                          ? 'bg-blue-100 text-blue-700 border border-blue-200'
                           : campaign.status === 'scheduled'
-                          ? 'bg-purple-100 text-purple-800'
-                          : 'bg-gray-100 text-gray-800'
+                          ? 'bg-purple-100 text-purple-700 border border-purple-200'
+                          : 'bg-gray-100 text-gray-700 border border-gray-200'
                       }`}
                     >
+                      {campaign.status === 'sent' && <CheckCircle2 size={12} />}
                       {campaign.status}
                     </span>
                     {campaign.stats && (
-                      <div className="mt-2 text-sm text-gray-600">
-                        <div>Sent: {campaign.stats.sent || 0}</div>
-                        <div>Opened: {campaign.stats.opened || 0}</div>
+                      <div className="space-y-1 text-sm">
+                        <div className="flex items-center justify-end gap-2">
+                          <span className="text-gray-500">Sent:</span>
+                          <span className="font-bold text-gray-900">{campaign.stats.sent || 0}</span>
+                        </div>
+                        <div className="flex items-center justify-end gap-2">
+                          <span className="text-gray-500">Opened:</span>
+                          <span className="font-bold text-blue-600">{campaign.stats.opened || 0}</span>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -189,7 +218,7 @@ const Dashboard = () => {
             ))}
           </div>
         )}
-      </Card>
+      </div>
     </div>
   );
 };

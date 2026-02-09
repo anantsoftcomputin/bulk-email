@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useContactStore } from '../../store/contactStore.db';
 import { useGroupStore } from '../../store/groupStore';
-import Button from '../common/Button';
+import { Button } from '../common/Button';
+import { Mail, User, Building2, Phone, Tag, Users } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const ContactForm = ({ contact, onClose }) => {
@@ -62,15 +63,17 @@ const ContactForm = ({ contact, onClose }) => {
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            First Name
+          <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+            <User size={16} className="text-gray-500" />
+            First Name *
           </label>
           <input
             {...register('firstName', { required: 'First name is required' })}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+            className="input-field"
+            placeholder="Enter first name"
           />
           {errors.firstName && (
             <p className="text-red-500 text-sm mt-1">{errors.firstName.message}</p>
@@ -78,12 +81,14 @@ const ContactForm = ({ contact, onClose }) => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Last Name
+          <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+            <User size={16} className="text-gray-500" />
+            Last Name *
           </label>
           <input
             {...register('lastName', { required: 'Last name is required' })}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+            className="input-field"
+            placeholder="Enter last name"
           />
           {errors.lastName && (
             <p className="text-red-500 text-sm mt-1">{errors.lastName.message}</p>
@@ -92,8 +97,9 @@ const ContactForm = ({ contact, onClose }) => {
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Email *
+        <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+          <Mail size={16} className="text-gray-500" />
+          Email Address *
         </label>
         <input
           type="email"
@@ -104,40 +110,48 @@ const ContactForm = ({ contact, onClose }) => {
               message: 'Invalid email address'
             }
           })}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+          className="input-field"
+          placeholder="email@example.com"
         />
         {errors.email && (
           <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>
         )}
       </div>
 
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Company
-        </label>
-        <input
-          {...register('company')}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-        />
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+            <Building2 size={16} className="text-gray-500" />
+            Company
+          </label>
+          <input
+            {...register('company')}
+            className="input-field"
+            placeholder="Company name"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+            <Phone size={16} className="text-gray-500" />
+            Phone
+          </label>
+          <input
+            {...register('phone')}
+            className="input-field"
+            placeholder="+1 (555) 000-0000"
+          />
+        </div>
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Phone
-        </label>
-        <input
-          {...register('phone')}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+          <Users size={16} className="text-gray-500" />
           Group
         </label>
         <select
           {...register('groupId')}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+          className="input-field"
         >
           <option value="">No Group</option>
           {groups.map((group) => (
@@ -149,62 +163,66 @@ const ContactForm = ({ contact, onClose }) => {
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block text-sm font-semibold text-gray-700 mb-2">
           Status
         </label>
         <select
           {...register('status')}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+          className="input-field"
         >
-          <option value="active">Active</option>
-          <option value="unsubscribed">Unsubscribed</option>
-          <option value="bounced">Bounced</option>
+          <option value="active">✅ Active</option>
+          <option value="unsubscribed">🔕 Unsubscribed</option>
+          <option value="bounced">❌ Bounced</option>
         </select>
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+          <Tag size={16} className="text-gray-500" />
           Tags
         </label>
-        <div className="space-y-2">
+        <div className="space-y-3">
           <div className="flex gap-2">
             <input
               type="text"
               value={tagInput}
               onChange={(e) => setTagInput(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
-              placeholder="Add tag..."
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+              placeholder="Add a tag..."
+              className="flex-1 input-field"
             />
-            <Button type="button" onClick={addTag} variant="outline">
-              Add
+            <Button type="button" onClick={addTag} variant="outline" size="md">
+              Add Tag
             </Button>
           </div>
-          <div className="flex flex-wrap gap-2">
-            {tags.map((tag) => (
-              <span
-                key={tag}
-                className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm flex items-center gap-1"
-              >
-                {tag}
-                <button
-                  type="button"
-                  onClick={() => removeTag(tag)}
-                  className="hover:text-blue-900"
+          {tags.length > 0 && (
+            <div className="flex flex-wrap gap-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
+              {tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="inline-flex items-center gap-2 px-3 py-1.5 bg-white border border-blue-200 text-blue-700 rounded-lg text-sm font-medium shadow-sm hover:shadow-md transition-shadow"
                 >
-                  ×
-                </button>
-              </span>
-            ))}
-          </div>
+                  <Tag size={14} />
+                  {tag}
+                  <button
+                    type="button"
+                    onClick={() => removeTag(tag)}
+                    className="text-blue-500 hover:text-blue-700 font-bold"
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
-      <div className="flex gap-3 pt-4">
-        <Button type="submit" className="flex-1">
+      <div className="flex gap-3 pt-4 border-t border-gray-200">
+        <Button type="submit" className="flex-1 btn-gradient">
           {contact ? 'Update Contact' : 'Add Contact'}
         </Button>
-        <Button type="button" variant="outline" onClick={onClose}>
+        <Button type="button" variant="outline" onClick={onClose} className="px-8">
           Cancel
         </Button>
       </div>

@@ -8,7 +8,7 @@ const DashboardLayout = () => {
   const { sidebarCollapsed } = useUIStore();
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-gray-50 to-blue-50">
       <Sidebar />
       <div
         className={`transition-all duration-300 ${
@@ -16,7 +16,7 @@ const DashboardLayout = () => {
         }`}
       >
         <Header />
-        <main className="p-6">
+        <main className="p-4 lg:p-8 animate-fade-in">
           <Outlet />
         </main>
       </div>

@@ -2,6 +2,7 @@
 import { db, dbHelpers } from '../db/database';
 import toast from 'react-hot-toast';
 import emailAPI from '../api/emailAPI';
+import { applyTracking } from '../utils/trackingHelpers';
 
 class EmailQueueService {
   constructor() {
@@ -176,14 +177,25 @@ class EmailQueueService {
 
       console.log('Using SMTP config:', smtpConfig.name);
 
+      // Inject tracking pixel and link tracking into the email body
+      let trackedBody = queueItem.body;
+      if (queueItem.campaignId && queueItem.contactId) {
+        try {
+          trackedBody = applyTracking(queueItem.body, queueItem.campaignId, queueItem.contactId);
+          console.log('Tracking injected for:', queueItem.email);
+        } catch (trackingErr) {
+          console.warn('Failed to inject tracking, sending without tracking:', trackingErr.message);
+        }
+      }
+
       // Send via backend API
       let emailSent = false;
       try {
         const result = await emailAPI.sendEmail(smtpConfig, {
           to: queueItem.email,
           subject: queueItem.subject,
-          body: queueItem.body,
-          html: queueItem.body,
+          body: trackedBody,
+          html: trackedBody,
         });
 
         if (!result.success) {

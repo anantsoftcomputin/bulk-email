@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Save, Trash2, Download, Database } from 'lucide-react';
-import Card from '../components/common/Card';
-import Button from '../components/common/Button';
+import { Save, Trash2, Download, Database, User, Building, Bell, Settings as SettingsIcon, Mail } from 'lucide-react';
+import { Button } from '../components/common/Button';
 import Input from '../components/common/Input';
 import { dbHelpers } from '../db/database';
 import toast from 'react-hot-toast';
@@ -90,26 +89,37 @@ const Settings = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent"></div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 animate-fade-in">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-gray-900">Settings</h1>
+        <div>
+          <h1 className="text-4xl font-bold text-gray-900 tracking-tight">Settings</h1>
+          <p className="text-gray-600 mt-2 font-medium">Manage your account and application preferences</p>
+        </div>
         <Button
-          icon={<Save className="w-4 h-4" />}
+          icon={<Save size={20} />}
           onClick={handleSave}
           disabled={saving}
+          className="btn-gradient shadow-lg"
         >
           {saving ? 'Saving...' : 'Save Settings'}
         </Button>
       </div>
 
-      <Card title="Account Settings">
-        <div className="space-y-4">
+      {/* Account Settings */}
+      <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center">
+            <User className="w-5 h-5 text-white" />
+          </div>
+          <h2 className="text-xl font-bold text-gray-900">Account Settings</h2>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Input
             label="Name"
             value={settings.userName}
@@ -124,10 +134,17 @@ const Settings = () => {
             placeholder="your@email.com"
           />
         </div>
-      </Card>
+      </div>
 
-      <Card title="Company Information">
-        <div className="space-y-4">
+      {/* Company Information */}
+      <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center">
+            <Building className="w-5 h-5 text-white" />
+          </div>
+          <h2 className="text-xl font-bold text-gray-900">Company Information</h2>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Input
             label="Company Name"
             value={settings.companyName}
@@ -141,39 +158,59 @@ const Settings = () => {
             placeholder="https://yourcompany.com"
           />
         </div>
-      </Card>
+      </div>
 
-      <Card title="Notification Settings">
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="font-medium">Email Notifications</h3>
-              <p className="text-sm text-gray-600">Receive email notifications for important events</p>
-            </div>
-            <input
-              type="checkbox"
-              checked={settings.emailNotifications}
-              onChange={(e) => handleChange('emailNotifications', e.target.checked)}
-              className="w-5 h-5 rounded border-gray-300"
-            />
+      {/* Notification Settings */}
+      <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center">
+            <Bell className="w-5 h-5 text-white" />
           </div>
-          <div className="flex items-center justify-between">
+          <h2 className="text-xl font-bold text-gray-900">Notification Settings</h2>
+        </div>
+        <div className="space-y-6">
+          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
             <div>
-              <h3 className="font-medium">Campaign Notifications</h3>
-              <p className="text-sm text-gray-600">Get notified when campaigns complete</p>
+              <h3 className="font-bold text-gray-900">Email Notifications</h3>
+              <p className="text-sm text-gray-600 mt-1">Receive email notifications for important events</p>
             </div>
-            <input
-              type="checkbox"
-              checked={settings.campaignNotifications}
-              onChange={(e) => handleChange('campaignNotifications', e.target.checked)}
-              className="w-5 h-5 rounded border-gray-300"
-            />
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={settings.emailNotifications}
+                onChange={(e) => handleChange('emailNotifications', e.target.checked)}
+                className="sr-only peer"
+              />
+              <div className="w-14 h-7 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-blue-600 peer-checked:to-indigo-600"></div>
+            </label>
+          </div>
+          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+            <div>
+              <h3 className="font-bold text-gray-900">Campaign Notifications</h3>
+              <p className="text-sm text-gray-600 mt-1">Get notified when campaigns complete</p>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={settings.campaignNotifications}
+                onChange={(e) => handleChange('campaignNotifications', e.target.checked)}
+                className="sr-only peer"
+              />
+              <div className="w-14 h-7 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-blue-600 peer-checked:to-indigo-600"></div>
+            </label>
           </div>
         </div>
-      </Card>
+      </div>
 
-      <Card title="Email Queue Settings">
-        <div className="space-y-4">
+      {/* Email Queue Settings */}
+      <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl flex items-center justify-center">
+            <Mail className="w-5 h-5 text-white" />
+          </div>
+          <h2 className="text-xl font-bold text-gray-900">Email Queue Settings</h2>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Input
             label="Max Emails Per Hour"
             type="number"
@@ -202,90 +239,98 @@ const Settings = () => {
             help="Wait time before retrying failed emails"
           />
         </div>
-      </Card>
+      </div>
 
-      <Card title="Database Management">
+      {/* Database Management */}
+      <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-10 h-10 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-xl flex items-center justify-center">
+            <Database className="w-5 h-5 text-white" />
+          </div>
+          <h2 className="text-xl font-bold text-gray-900">Database Management</h2>
+        </div>
+        
+        {/* Database Statistics */}
+        {dbStats && (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-100">
+              <div className="text-3xl font-bold text-blue-600 mb-1">{dbStats.contacts}</div>
+              <div className="text-sm font-bold text-gray-600 uppercase tracking-wide">Contacts</div>
+            </div>
+            <div className="bg-gradient-to-br from-emerald-50 to-teal-50 p-6 rounded-xl border border-emerald-100">
+              <div className="text-3xl font-bold text-emerald-600 mb-1">{dbStats.groups}</div>
+              <div className="text-sm font-bold text-gray-600 uppercase tracking-wide">Groups</div>
+            </div>
+            <div className="bg-gradient-to-br from-purple-50 to-pink-50 p-6 rounded-xl border border-purple-100">
+              <div className="text-3xl font-bold text-purple-600 mb-1">{dbStats.templates}</div>
+              <div className="text-sm font-bold text-gray-600 uppercase tracking-wide">Templates</div>
+            </div>
+            <div className="bg-gradient-to-br from-amber-50 to-orange-50 p-6 rounded-xl border border-amber-100">
+              <div className="text-3xl font-bold text-amber-600 mb-1">{dbStats.campaigns}</div>
+              <div className="text-sm font-bold text-gray-600 uppercase tracking-wide">Campaigns</div>
+            </div>
+          </div>
+        )}
+
+        {/* Data Management Actions */}
         <div className="space-y-6">
-          {/* Database Statistics */}
-          {dbStats && (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <div className="text-2xl font-bold text-blue-600">{dbStats.contacts}</div>
-                <div className="text-sm text-gray-600">Contacts</div>
-              </div>
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <div className="text-2xl font-bold text-green-600">{dbStats.groups}</div>
-                <div className="text-sm text-gray-600">Groups</div>
-              </div>
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <div className="text-2xl font-bold text-purple-600">{dbStats.templates}</div>
-                <div className="text-sm text-gray-600">Templates</div>
-              </div>
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <div className="text-2xl font-bold text-orange-600">{dbStats.campaigns}</div>
-                <div className="text-sm text-gray-600">Campaigns</div>
-              </div>
-            </div>
-          )}
+          <div className="border-t border-gray-200 pt-6">
+            <h3 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
+              <Download className="w-5 h-5 text-blue-600" />
+              Data Export/Import
+            </h3>
+            <Button
+              variant="outline"
+              onClick={async () => {
+                try {
+                  await exportAllData();
+                  toast.success('Data exported successfully');
+                } catch (error) {
+                  toast.error('Failed to export data');
+                }
+              }}
+              icon={<Download size={18} />}
+            >
+              Export All Data
+            </Button>
+            <p className="text-sm text-gray-600 mt-3">
+              Export all your data as a JSON backup file
+            </p>
+          </div>
 
-          {/* Data Management Actions */}
-          <div className="space-y-4">
-            <div className="border-t pt-4">
-              <h3 className="font-medium mb-2 flex items-center gap-2">
-                <Database className="w-5 h-5" />
-                Data Export/Import
-              </h3>
-              <div className="flex gap-3">
-                <Button
-                  variant="outline"
-                  onClick={async () => {
-                    try {
-                      await exportAllData();
-                    } catch (error) {
-                      toast.error('Failed to export data');
-                    }
-                  }}
-                  icon={<Download className="w-4 h-4" />}
-                >
-                  Export All Data
-                </Button>
-              </div>
-              <p className="text-sm text-gray-600 mt-2">
-                Export all your data as a JSON backup file
-              </p>
-            </div>
-
-            <div className="border-t pt-4">
-              <h3 className="font-medium mb-2 flex items-center gap-2 text-red-600">
-                <Trash2 className="w-5 h-5" />
-                Clear Demo Data
-              </h3>
-              <Button
-                variant="outline"
-                className="border-red-300 text-red-600 hover:bg-red-50"
-                onClick={async () => {
-                  if (window.confirm('Are you sure you want to clear all demo/sample data? This action cannot be undone!')) {
-                    try {
-                      await clearDemoData();
-                      toast.success('Demo data cleared successfully');
-                      // Reload stats and settings
-                      await loadDbStats();
-                      window.location.reload();
-                    } catch (error) {
-                      toast.error('Failed to clear demo data');
-                    }
+          <div className="border-t border-gray-200 pt-6">
+            <h3 className="font-bold text-red-600 mb-3 flex items-center gap-2">
+              <Trash2 className="w-5 h-5" />
+              Clear Demo Data
+            </h3>
+            <Button
+              variant="outline"
+              className="border-red-300 text-red-600 hover:bg-red-50"
+              onClick={async () => {
+                if (window.confirm('Are you sure you want to clear all demo/sample data? This action cannot be undone!')) {
+                  try {
+                    await clearDemoData();
+                    toast.success('Demo data cleared successfully');
+                    // Reload stats and settings
+                    await loadDbStats();
+                    window.location.reload();
+                  } catch (error) {
+                    toast.error('Failed to clear demo data');
                   }
-                }}
-              >
-                Clear All Demo Data
-              </Button>
-              <p className="text-sm text-red-600 mt-2">
+                }
+              }}
+              icon={<Trash2 size={18} />}
+            >
+              Clear All Demo Data
+            </Button>
+            <div className="mt-3 p-4 bg-red-50 border border-red-200 rounded-xl">
+              <p className="text-sm text-red-700 font-medium">
                 ⚠️ Warning: This will delete ALL contacts, groups, templates, campaigns, and reset the database. Settings will be preserved.
               </p>
             </div>
           </div>
         </div>
-      </Card>
+      </div>
     </div>
   );
 };

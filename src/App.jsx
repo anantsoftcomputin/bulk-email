@@ -4,6 +4,10 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
 import { initializeSampleData } from './db/database';
 import emailQueueService from './services/emailQueue';
+import { useAuthStore } from './store/authStore';
+import AuthGuard from './components/auth/AuthGuard';
+import Login from './pages/Login';
+import Register from './pages/Register';
 import DashboardLayout from './components/layout/DashboardLayout';
 import Dashboard from './pages/Dashboard';
 import Contacts from './pages/Contacts';
@@ -26,44 +30,64 @@ const queryClient = new QueryClient({
 
 function App() {
   const [dbInitialized, setDbInitialized] = useState(false);
+  const { initializeAuth, isAuthenticated } = useAuthStore();
 
+  // Initialize Firebase auth listener
   useEffect(() => {
-    // Initialize database with sample data on first load
+    const unsubscribe = initializeAuth();
+    return () => unsubscribe();
+  }, []);
+
+  // Initialize local database and queue when authenticated
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setDbInitialized(false);
+      return;
+    }
+
     const initDB = async () => {
       try {
         await initializeSampleData();
-        // Start email queue processing
         emailQueueService.startProcessing();
         setDbInitialized(true);
       } catch (error) {
         console.error('Error initializing database:', error);
-        setDbInitialized(true); // Continue anyway
+        setDbInitialized(true);
       }
     };
     initDB();
 
-    // Cleanup on unmount
     return () => {
       emailQueueService.stopProcessing();
     };
-  }, []);
-
-  if (!dbInitialized) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-          <p className="mt-4 text-gray-600">Initializing database...</p>
-        </div>
-      </div>
-    );
-  }
+  }, [isAuthenticated]);
 
   return (
     <QueryClientProvider client={queryClient}>
       <Router>
         <Routes>
-          <Route path="/" element={<DashboardLayout />}>
+          {/* Public routes */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+
+          {/* Protected routes */}
+          <Route
+            path="/"
+            element={
+              <AuthGuard>
+                {!dbInitialized ? (
+                  <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-gray-50 to-blue-50">
+                    <div className="text-center">
+                      <div className="w-14 h-14 border-4 border-blue-200 rounded-full animate-spin border-t-blue-600 mx-auto"></div>
+                      <p className="mt-6 text-gray-500 font-medium">Initializing workspace...</p>
+                    </div>
+                  </div>
+                ) : (
+                  <DashboardLayout />
+                )}
+              </AuthGuard>
+            }
+          >
             <Route index element={<Dashboard />} />
             <Route path="contacts" element={<Contacts />} />
             <Route path="groups" element={<Groups />} />
@@ -74,6 +98,8 @@ function App() {
             <Route path="email-queue" element={<EmailQueue />} />
             <Route path="settings" element={<Settings />} />
           </Route>
+
+          {/* Catch-all */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Router>
