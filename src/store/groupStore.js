@@ -32,11 +32,15 @@ export const useGroupStore = create((set, get) => ({
     try {
       const id = await dbHelpers.createGroup(group);
       const newGroup = await dbHelpers.getGroupById(id);
+      // Add contactCount to new group
+      const contacts = await dbHelpers.getGroupContacts(id);
+      const groupWithCount = { ...newGroup, contactCount: contacts.length };
+      
       set((state) => ({
-        groups: [newGroup, ...state.groups],
+        groups: [groupWithCount, ...state.groups],
         isLoading: false
       }));
-      return newGroup;
+      return groupWithCount;
     } catch (error) {
       console.error('Error adding group:', error);
       set({ isLoading: false, error: error.message });
@@ -49,11 +53,15 @@ export const useGroupStore = create((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const updated = await dbHelpers.updateGroup(id, updates);
+      // Recalculate contact count
+      const contacts = await dbHelpers.getGroupContacts(id);
+      const groupWithCount = { ...updated, contactCount: contacts.length };
+      
       set((state) => ({
-        groups: state.groups.map(g => g.id === id ? updated : g),
+        groups: state.groups.map(g => g.id === id ? groupWithCount : g),
         isLoading: false
       }));
-      return updated;
+      return groupWithCount;
     } catch (error) {
       console.error('Error updating group:', error);
       set({ isLoading: false, error: error.message });
@@ -87,6 +95,22 @@ export const useGroupStore = create((set, get) => ({
     } catch (error) {
       console.error('Error getting group contacts:', error);
       throw error;
+    }
+  },
+
+  // Refresh contact counts for all groups
+  refreshContactCounts: async () => {
+    try {
+      const groups = get().groups;
+      const groupsWithCounts = await Promise.all(
+        groups.map(async (group) => {
+          const contacts = await dbHelpers.getGroupContacts(group.id);
+          return { ...group, contactCount: contacts.length };
+        })
+      );
+      set({ groups: groupsWithCounts });
+    } catch (error) {
+      console.error('Error refreshing contact counts:', error);
     }
   },
 }));

@@ -15,7 +15,7 @@ import toast from 'react-hot-toast';
 
 const Contacts = () => {
   const { contacts, filters, setFilters, initializeContacts, deleteContact, updateContact } = useContactStore();
-  const { groups, initializeGroups } = useGroupStore();
+  const { groups, initializeGroups, refreshContactCounts } = useGroupStore();
   const [showAddModal, setShowAddModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [showGroupModal, setShowGroupModal] = useState(false);
@@ -81,18 +81,31 @@ const Contacts = () => {
       return;
     }
     
-    const groupId = parseInt(selectedGroupForAssignment);
-    for (const contactId of selectedContacts) {
-      await updateContact(contactId, { groupId });
+    try {
+      const groupId = selectedGroupForAssignment; // Don't parseInt - keep as string for Firestore
+      
+      // Update all contacts with the new groupId
+      await Promise.all(
+        selectedContacts.map(contactId => updateContact(contactId, { groupId }))
+      );
+      
+      // Wait a bit for Firestore to sync
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Refresh contacts and group contact counts
+      await initializeContacts();
+      await refreshContactCounts();
+      
+      setSelectedContacts([]);
+      setSelectAll(false);
+      setShowGroupModal(false);
+      setSelectedGroupForAssignment('');
+      
+      toast.success(`Assigned ${selectedContacts.length} contact(s) to group`);
+    } catch (error) {
+      console.error('Error assigning contacts to group:', error);
+      toast.error('Failed to assign contacts to group');
     }
-    
-    setSelectedContacts([]);
-    setSelectAll(false);
-    setShowGroupModal(false);
-    setSelectedGroupForAssignment('');
-    await initializeContacts();
-    await initializeGroups();
-    toast.success(`Assigned ${selectedContacts.length} contact(s) to group`);
   };
 
   const columns = [
