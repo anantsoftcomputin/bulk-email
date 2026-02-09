@@ -2,14 +2,15 @@
 const { initializeApp, getApps } = require('firebase/app');
 const { getFirestore, collection, addDoc, serverTimestamp } = require('firebase/firestore');
 
+// Use environment variables from Netlify
 const firebaseConfig = {
-  apiKey: 'AIzaSyB9spE_tHCa-Ph96DDnYxQX_7GzHSbGBGQ',
-  authDomain: 'mados-7cc5b.firebaseapp.com',
-  projectId: 'mados-7cc5b',
-  storageBucket: 'mados-7cc5b.firebasestorage.app',
-  messagingSenderId: '969407470784',
-  appId: '1:969407470784:web:894637ccb2066f7677a125',
-  measurementId: 'G-L2662CPKGB',
+  apiKey: process.env.VITE_FIREBASE_API_KEY,
+  authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.VITE_FIREBASE_APP_ID,
+  measurementId: process.env.VITE_FIREBASE_MEASUREMENT_ID,
 };
 
 let app;
