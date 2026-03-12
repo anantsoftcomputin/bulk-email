@@ -99,31 +99,15 @@ export const useCampaignStore = create((set, get) => ({
     return campaigns.filter(c => c.status === status);
   },
 
-  // Sync campaign stats from tracking events
+  // Sync campaign stats — re-reads the campaign from Firestore so that
+  // increments written directly by Netlify tracking functions are reflected.
   syncCampaignStats: async (campaignId) => {
     try {
-      // Get tracking events for this campaign from Firestore
-      const trackingEvents = await dbHelpers.getTrackingEvents(campaignId);
-      
-      // Count opens and clicks
-      const opens = trackingEvents.filter(e => e.type === 'open').length;
-      const clicks = trackingEvents.filter(e => e.type === 'click').length;
-      
-      // Update campaign stats
       const campaign = await dbHelpers.getCampaignById(campaignId);
       if (campaign) {
-        const updatedStats = {
-          ...campaign.stats,
-          opened: opens,
-          clicked: clicks,
-        };
-        
-        await dbHelpers.updateCampaign(campaignId, { stats: updatedStats });
-        
-        // Update store
         set((state) => ({
-          campaigns: state.campaigns.map(c => 
-            c.id === campaignId ? { ...c, stats: updatedStats } : c
+          campaigns: state.campaigns.map(c =>
+            c.id === campaignId ? { ...c, stats: campaign.stats } : c
           ),
         }));
       }
@@ -132,11 +116,8 @@ export const useCampaignStore = create((set, get) => ({
     }
   },
 
-  // Sync all campaign stats
+  // Sync all campaign stats by refreshing from Firestore
   syncAllCampaignStats: async () => {
-    const { campaigns } = get();
-    for (const campaign of campaigns) {
-      await get().syncCampaignStats(campaign.id);
-    }
+    await get().initializeCampaigns();
   },
 }));

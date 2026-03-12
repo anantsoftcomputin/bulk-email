@@ -1,18 +1,41 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Play, Pause, Copy, Trash2, Send, Users, BarChart3, Calendar } from 'lucide-react';
-import { Button } from '../components/common/Button';
+import {
+  Plus, Play, Copy, Trash2, Send, Users, BarChart3, Calendar,
+  CheckCircle2, Clock, AlertCircle, Activity, ArrowUpRight, RefreshCw, Pencil,
+} from 'lucide-react';
 import CampaignWizard from '../components/campaigns/CampaignWizard';
 import CampaignProgress from '../components/campaigns/CampaignProgress';
 import { useCampaignStore } from '../store/campaignStore.db';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
-import { useNavigate } from 'react-router-dom';
 import emailQueueService from '../services/emailQueue';
-import { db } from '../db/database';
+import { db, dbHelpers } from '../db/database';
+
+const StatusBadge = ({ status }) => {
+  const map = {
+    sent:      'badge-sent',
+    sending:   'badge-sending',
+    draft:     'badge-draft',
+    failed:    'badge-failed',
+    scheduled: 'badge-scheduled',
+  };
+  const icons = {
+    sent: <CheckCircle2 size={10} />,
+    sending: <Activity size={10} />,
+    scheduled: <Clock size={10} />,
+    failed: <AlertCircle size={10} />,
+  };
+  return (
+    <span className={`badge ${map[status] || 'badge-draft'} capitalize`}>
+      {icons[status]}
+      {status}
+    </span>
+  );
+};
 
 const Campaigns = () => {
-  const navigate = useNavigate();
   const [showWizard, setShowWizard] = useState(false);
+  const [editingCampaign, setEditingCampaign] = useState(null);
   const [showProgress, setShowProgress] = useState(false);
   const [activeCampaignId, setActiveCampaignId] = useState(null);
   const { campaigns, initializeCampaigns, deleteCampaign, updateCampaign, syncAllCampaignStats } = useCampaignStore();
@@ -20,119 +43,66 @@ const Campaigns = () => {
   useEffect(() => {
     const loadData = async () => {
       await initializeCampaigns();
-      // Sync campaign stats from tracking events
-      if (syncAllCampaignStats) {
-        await syncAllCampaignStats();
-      }
+      if (syncAllCampaignStats) await syncAllCampaignStats();
     };
     loadData();
-    
-    // Auto-refresh campaign stats every 30 seconds
-    const refreshInterval = setInterval(async () => {
-      if (syncAllCampaignStats) {
-        await syncAllCampaignStats();
-      }
+    const interval = setInterval(async () => {
+      if (syncAllCampaignStats) await syncAllCampaignStats();
       await initializeCampaigns();
     }, 30000);
-    
-    return () => clearInterval(refreshInterval);
+    return () => clearInterval(interval);
   }, []);
 
   const updateCampaignStatus = async (campaignId, status) => {
     try {
-      console.log('Updating campaign status:', campaignId, status);
       await updateCampaign(campaignId, { status });
-      
-      // Refresh campaigns list immediately
       await initializeCampaigns();
-      
-      // If starting to send, add to email queue
       if (status === 'sending') {
         const campaign = campaigns.find(c => c.id === campaignId);
-        console.log('Found campaign:', campaign);
-        
         if (campaign) {
-          // Get campaign recipients
           const recipients = await db.campaignRecipients.where('campaignId').equals(campaignId).toArray();
-          console.log('Campaign recipients:', recipients);
-          
           if (recipients.length === 0) {
             toast.error('No recipients assigned to this campaign');
             await updateCampaign(campaignId, { status: 'draft' });
             await initializeCampaigns();
             return;
           }
-
-          // Get template
           const template = await db.templates.get(campaign.templateId);
-          console.log('Template:', template);
-          
           if (!template) {
-            toast.error('Template not found for this campaign');
+            toast.error('Template not found');
             await updateCampaign(campaignId, { status: 'draft' });
             await initializeCampaigns();
             return;
           }
-
-          // Get full contact details for each recipient
           const contacts = [];
           for (const recipient of recipients) {
             const contact = await db.contacts.get(recipient.contactId);
-            if (contact) {
-              contacts.push(contact);
-            }
+            if (contact) contacts.push(contact);
           }
-          console.log('Contacts to send to:', contacts);
-
           if (contacts.length === 0) {
-            toast.error('No valid contacts found for this campaign');
+            toast.error('No valid contacts found');
             await updateCampaign(campaignId, { status: 'draft' });
             await initializeCampaigns();
             return;
           }
-
-          // Add to email queue
           const queuedCount = await emailQueueService.addCampaignToQueue(
-            campaignId, 
-            contacts, 
-            {
-              subject: campaign.subject,
-              body: template.htmlContent || template.body || ''
-            }
+            campaignId, contacts,
+            { subject: campaign.subject, body: template.htmlContent || template.body || '' }
           );
-          
-          console.log(`Added ${queuedCount} emails to queue`);
-          
-          // Update campaign stats with sent count
-          const updatedStats = {
-            ...campaign.stats,
-            sent: (campaign.stats?.sent || 0) + queuedCount,
-            total: queuedCount,
-          };
-          await updateCampaign(campaignId, { 
-            stats: updatedStats,
-            sentAt: new Date().toISOString()
+          await updateCampaign(campaignId, {
+            stats: { ...campaign.stats, sent: (campaign.stats?.sent || 0) + queuedCount, total: queuedCount },
+            sentAt: new Date().toISOString(),
           });
-          
-          toast.success(`Campaign started! ${queuedCount} emails added to queue`);
-          
-          // Show progress modal
+          toast.success(`Campaign started! ${queuedCount} emails queued`);
           setActiveCampaignId(campaignId);
           setShowProgress(true);
-          
-          // Start processing if not already running
-          if (!emailQueueService.isProcessing) {
-            emailQueueService.startProcessing();
-            console.log('Email queue processor started');
-          }
-          
-          // Refresh campaigns to show updated stats
+          if (!emailQueueService.isProcessing) emailQueueService.startProcessing();
           await initializeCampaigns();
         }
       }
     } catch (error) {
       console.error('Error updating campaign status:', error);
-      toast.error(`Failed to update campaign status: ${error.message}`);
+      toast.error(`Failed to update campaign: ${error.message}`);
       await initializeCampaigns();
     }
   };
@@ -141,336 +111,193 @@ const Campaigns = () => {
     try {
       const campaign = campaigns.find(c => c.id === campaignId);
       if (campaign) {
-        const newCampaign = {
-          ...campaign,
-          id: undefined, // Let database generate new ID
-          name: `${campaign.name} (Copy)`,
-          status: 'draft',
-          createdAt: new Date().toISOString(),
-        };
-        
-        await db.campaigns.add(newCampaign);
+        // Destructure out id so Firestore never receives id:undefined
+        const { id: _id, ...rest } = campaign;
+        const newCampaignId = await db.campaigns.add({ ...rest, name: `${campaign.name} (Copy)`, status: 'draft', createdAt: new Date().toISOString() });
+        // Copy all recipients from the original campaign to the new one
+        const existingRecipients = await dbHelpers.getCampaignRecipients(campaignId);
+        for (const { id: _rid, ...recip } of existingRecipients) {
+          await dbHelpers.addCampaignRecipient({ ...recip, campaignId: newCampaignId, status: 'pending' });
+        }
         await initializeCampaigns();
-        toast.success('Campaign duplicated');
+        toast.success(`Campaign duplicated with ${existingRecipients.length} recipient${existingRecipients.length !== 1 ? 's' : ''}`);
       }
     } catch (error) {
-      console.error('Error duplicating campaign:', error);
+      console.error('Duplicate campaign error:', error);
       toast.error('Failed to duplicate campaign');
     }
   };
 
-  const columns = [
-    {
-      header: 'Campaign',
-      render: (row) => (
-        <div>
-          <div className="font-medium">{row.name}</div>
-          <div className="text-sm text-gray-500">{row.subject}</div>
-        </div>
-      ),
-    },
-    {
-      header: 'Status',
-      render: (row) => (
-        <span
-          className={`px-3 py-1 rounded-full text-xs font-medium ${
-            row.status === 'sent'
-              ? 'bg-green-100 text-green-800'
-              : row.status === 'sending'
-              ? 'bg-blue-100 text-blue-800'
-              : row.status === 'scheduled'
-              ? 'bg-purple-100 text-purple-800'
-              : row.status === 'failed'
-              ? 'bg-red-100 text-red-800'
-              : 'bg-gray-100 text-gray-800'
-          }`}
-        >
-          {row.status}
-        </span>
-      ),
-    },
-    {
-      header: 'Recipients',
-      render: (row) => {
-        const count = row.totalRecipients || 0;
-        return (
-          <div className="flex items-center space-x-2">
-            <span className="font-medium">{count}</span>
-            {count === 0 && (
-              <span className="text-xs text-red-600">(No recipients)</span>
-            )}
-          </div>
-        );
-      },
-    },
-    {
-      header: 'Sent / Opened',
-      render: (row) => (
-        <div className="text-sm">
-          <div>{row.stats?.sent || 0} sent</div>
-          <div className="text-gray-500">{row.stats?.opened || 0} opened</div>
-        </div>
-      ),
-    },
-    {
-      header: 'Created',
-      render: (row) => format(new Date(row.createdAt), 'MMM dd, yyyy'),
-    },
-    {
-      header: 'Actions',
-      render: (row) => (
-        <div className="flex items-center space-x-2">
-          {row.status === 'draft' && (
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => updateCampaignStatus(row.id, 'sending')}
-              icon={<Play className="w-4 h-4" />}
-            >
-              Send
-            </Button>
-          )}
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => {
-              duplicateCampaign(row.id);
-              toast.success('Campaign duplicated');
-            }}
-            icon={<Copy className="w-4 h-4" />}
-          >
-            Duplicate
-          </Button>
-          <Button
-            size="sm"
-            variant="danger"
-            onClick={async () => {
-              if (confirm('Delete this campaign?')) {
-                await deleteCampaign(row.id);
-                toast.success('Campaign deleted');
-              }
-            }}
-            icon={<Trash2 className="w-4 h-4" />}
-          >
-            Delete
-          </Button>
-        </div>
-      ),
-    },
-  ];
-
-  const getStatusBadge = (status) => {
-    const variants = {
-      sent: 'bg-emerald-100 text-emerald-700 border border-emerald-200',
-      sending: 'bg-blue-100 text-blue-700 border border-blue-200',
-      scheduled: 'bg-purple-100 text-purple-700 border border-purple-200',
-      failed: 'bg-red-100 text-red-700 border border-red-200',
-      draft: 'bg-gray-100 text-gray-700 border border-gray-200'
-    };
-    return variants[status] || variants.draft;
+  const handleDelete = async (campaignId) => {
+    if (!window.confirm('Delete this campaign? This action cannot be undone.')) return;
+    await deleteCampaign(campaignId);
+    toast.success('Campaign deleted');
   };
 
+  const statCards = [
+    { label: 'Total',     value: campaigns.length,                                                                   icon: Send,         iconBg: 'bg-indigo-50',  iconColor: 'text-indigo-600' },
+    { label: 'Active',    value: campaigns.filter(c => c.status === 'sending' || c.status === 'scheduled').length,   icon: Activity,     iconBg: 'bg-blue-50',    iconColor: 'text-blue-600' },
+    { label: 'Sent',      value: campaigns.filter(c => c.status === 'sent').length,                                  icon: CheckCircle2, iconBg: 'bg-emerald-50', iconColor: 'text-emerald-600' },
+    { label: 'Drafts',    value: campaigns.filter(c => c.status === 'draft').length,                                 icon: Calendar,     iconBg: 'bg-amber-50',   iconColor: 'text-amber-600' },
+  ];
+
   return (
-    <div className="space-y-8 animate-fade-in">
+    <div className="space-y-6 animate-fade-in">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-4xl font-bold text-gray-900 tracking-tight">Campaigns</h1>
-          <p className="text-gray-600 mt-2 font-medium">Create and manage email campaigns</p>
+          <h1 className="page-title">Campaigns</h1>
+          <p className="page-subtitle">Create and manage your email campaigns</p>
         </div>
-        <Button
-          icon={<Plus size={20} />}
-          onClick={() => setShowWizard(true)}
-          className="btn-gradient shadow-lg"
+        <button
+          onClick={() => { setEditingCampaign(null); setShowWizard(true); }}
+          className="btn-gradient self-start sm:self-auto"
         >
-          Create Campaign
-        </Button>
+          <Plus size={16} /> New Campaign
+        </button>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-bold text-gray-500 uppercase tracking-wide mb-1">Total Campaigns</p>
-              <p className="text-3xl font-bold text-gray-900 mt-2">{campaigns.length}</p>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {statCards.map((s, i) => {
+          const Icon = s.icon;
+          return (
+            <div key={i} className="stat-card">
+              <div className={`icon-box ${s.iconBg} mb-3`}>
+                <Icon className={`w-[18px] h-[18px] ${s.iconColor}`} />
+              </div>
+              <p className="text-2xl font-semibold text-gray-900 tabular-nums">{s.value.toLocaleString()}</p>
+              <p className="text-xs text-gray-500 mt-1">{s.label}</p>
             </div>
-            <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg">
-              <Send className="text-white" size={28} />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-bold text-gray-500 uppercase tracking-wide mb-1">Active</p>
-              <p className="text-3xl font-bold text-gray-900 mt-2">
-                {campaigns.filter(c => c.status === 'sending' || c.status === 'scheduled').length}
-              </p>
-            </div>
-            <div className="w-14 h-14 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl flex items-center justify-center shadow-lg">
-              <BarChart3 className="text-white" size={28} />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-bold text-gray-500 uppercase tracking-wide mb-1">Drafts</p>
-              <p className="text-3xl font-bold text-gray-900 mt-2">
-                {campaigns.filter(c => c.status === 'draft').length}
-              </p>
-            </div>
-            <div className="w-14 h-14 bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl flex items-center justify-center shadow-lg">
-              <Calendar className="text-white" size={28} />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-bold text-gray-500 uppercase tracking-wide mb-1">Total Recipients</p>
-              <p className="text-3xl font-bold text-gray-900 mt-2">
-                {campaigns.reduce((sum, c) => sum + (c.totalRecipients || 0), 0)}
-              </p>
-            </div>
-            <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl flex items-center justify-center shadow-lg">
-              <Users className="text-white" size={28} />
-            </div>
-          </div>
-        </div>
+          );
+        })}
       </div>
 
-      {/* Campaigns List */}
+      {/* Table / Empty State */}
       {campaigns.length === 0 ? (
-        <div className="bg-white rounded-2xl p-12 shadow-sm border border-gray-100 text-center">
-          <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Send className="w-10 h-10 text-gray-400" />
+        <div className="card text-center py-14">
+          <div className="w-16 h-16 bg-surface-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <Send className="w-8 h-8 text-gray-300" />
           </div>
-          <h3 className="text-xl font-bold text-gray-900 mb-2">No campaigns yet</h3>
-          <p className="text-gray-600 mb-6">Create your first campaign to start sending emails</p>
-          <Button
-            onClick={() => setShowWizard(true)}
-            icon={<Plus size={20} />}
-            className="btn-gradient"
-          >
-            Create Your First Campaign
-          </Button>
+          <p className="text-base font-semibold text-gray-700 mb-1">No campaigns yet</p>
+          <p className="text-sm text-gray-400 mb-5">Create your first campaign to start reaching your audience</p>
+          <button onClick={() => { setEditingCampaign(null); setShowWizard(true); }} className="btn-primary mx-auto">
+            <Plus size={15} /> Create Campaign
+          </button>
         </div>
       ) : (
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="card p-0 overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
+            <table className="data-table">
+              <thead>
                 <tr>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Campaign</th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Recipients</th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Performance</th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Created</th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Actions</th>
+                  <th>Campaign</th>
+                  <th>Status</th>
+                  <th>Recipients</th>
+                  <th>Performance</th>
+                  <th>Created</th>
+                  <th className="text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-100">
-                {campaigns.map((campaign, idx) => (
-                  <tr 
-                    key={campaign.id}
-                    className={`hover:bg-blue-50 transition-all duration-200 ${
-                      idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
-                    }`}
-                  >
-                    <td className="px-6 py-5">
-                      <div className="font-bold text-gray-900">{campaign.name}</div>
-                      <div className="text-sm text-gray-600 mt-1">{campaign.subject}</div>
-                    </td>
-                    <td className="px-6 py-5">
-                      <span className={`px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wide ${getStatusBadge(campaign.status)}`}>
-                        {campaign.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-5">
-                      <div className="flex items-center">
-                        <span className="font-bold text-gray-900">{campaign.totalRecipients || 0}</span>
+              <tbody>
+                {campaigns.map((campaign) => {
+                  const sent    = campaign.stats?.sent    || 0;
+                  const opened  = campaign.stats?.opened  || 0;
+                  const clicked = campaign.stats?.clicked || 0;
+                  const or = sent > 0 ? ((opened / sent) * 100).toFixed(1) : null;
+                  return (
+                    <tr key={campaign.id}>
+                      <td>
+                        <p className="font-medium text-gray-900">{campaign.name}</p>
+                        <p className="text-xs text-gray-400 mt-0.5 line-clamp-1">{campaign.subject}</p>
+                      </td>
+                      <td><StatusBadge status={campaign.status} /></td>
+                      <td>
+                        <span className="font-medium text-gray-700">{campaign.totalRecipients || 0}</span>
                         {(campaign.totalRecipients || 0) === 0 && (
-                          <span className="ml-2 text-xs text-red-600 font-medium">(No recipients)</span>
+                          <span className="ml-2 text-xs text-rose-500">No recipients</span>
                         )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-5">
-                      <div className="space-y-1">
-                        <div className="text-sm">
-                          <span className="text-gray-600">Sent:</span> <span className="font-bold text-gray-900">{campaign.stats?.sent || 0}</span>
+                      </td>
+                      <td>
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2 text-xs">
+                            <span className="text-gray-400">Sent</span>
+                            <span className="font-medium text-gray-700">{sent.toLocaleString()}</span>
+                            <span className="text-gray-300">·</span>
+                            <span className="text-gray-400">Opened</span>
+                            <span className="font-medium text-emerald-600">{opened.toLocaleString()}</span>
+                            {or !== null && (
+                              <span className={`ml-1 px-1.5 py-0.5 rounded text-[10px] font-semibold ${parseFloat(or) >= 20 ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-50 text-gray-500'}`}>
+                                {or}%
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2 text-xs">
+                            <span className="text-gray-400">Clicked</span>
+                            <span className="font-medium text-violet-600">{clicked.toLocaleString()}</span>
+                          </div>
                         </div>
-                        <div className="text-sm">
-                          <span className="text-gray-600">Opened:</span> <span className="font-bold text-emerald-600">{campaign.stats?.opened || 0}</span>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-5">
-                      <span className="text-sm text-gray-600">{format(new Date(campaign.createdAt), 'MMM dd, yyyy')}</span>
-                    </td>
-                    <td className="px-6 py-5">
-                      <div className="flex items-center gap-2">
-                        {campaign.status === 'draft' && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => updateCampaignStatus(campaign.id, 'sending')}
-                            icon={<Play size={14} />}
+                      </td>
+                      <td className="text-gray-500">
+                        {format(new Date(campaign.createdAt), 'MMM dd, yyyy')}
+                      </td>
+                      <td>
+                        <div className="flex items-center justify-end gap-2">
+                          {campaign.status === 'draft' && (
+                            <button
+                              onClick={() => updateCampaignStatus(campaign.id, 'sending')}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition-colors"
+                            >
+                              <Play size={11} /> Send
+                            </button>
+                          )}
+                          {(campaign.status === 'draft' || campaign.status === 'scheduled') && (
+                            <button
+                              onClick={() => { setEditingCampaign(campaign); setShowWizard(true); }}
+                              title="Edit"
+                              className="p-1.5 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
+                            >
+                              <Pencil size={15} />
+                            </button>
+                          )}
+                          <button
+                            onClick={() => duplicateCampaign(campaign.id)}
+                            title="Duplicate"
+                            className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
                           >
-                            Send
-                          </Button>
-                        )}
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => duplicateCampaign(campaign.id)}
-                          icon={<Copy size={14} />}
-                        >
-                          
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="danger"
-                          onClick={async () => {
-                            if (window.confirm('Delete this campaign?')) {
-                              await deleteCampaign(campaign.id);
-                              toast.success('Campaign deleted');
-                            }
-                          }}
-                          icon={<Trash2 size={14} />}
-                        >
-                          
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                            <Copy size={15} />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(campaign.id)}
+                            title="Delete"
+                            className="p-1.5 text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
         </div>
       )}
 
-      {/* Campaign Wizard */}
       {showWizard && (
         <CampaignWizard
           isOpen={showWizard}
-          onClose={() => setShowWizard(false)}
+          campaign={editingCampaign}
+          onClose={() => { setShowWizard(false); setEditingCampaign(null); }}
         />
       )}
-      
-      {/* Campaign Progress Modal */}
       {showProgress && activeCampaignId && (
         <CampaignProgress
           campaignId={activeCampaignId}
           onClose={() => {
             setShowProgress(false);
             setActiveCampaignId(null);
-            // Refresh campaigns after closing progress
             initializeCampaigns();
           }}
         />

@@ -102,13 +102,14 @@ class EmailService {
   async sendCampaignEmail(config, emailData) {
     try {
       const transporter = this.createTransporter(config);
+      const htmlContent = this.ensureHtmlDocument(emailData.html || emailData.body);
 
       const info = await transporter.sendMail({
         from: `"${config.fromName || 'Bulk Email Sender'}" <${config.fromEmail}>`,
         to: emailData.to,
         subject: emailData.subject,
-        text: emailData.text || this.stripHtml(emailData.html || emailData.body),
-        html: emailData.html || emailData.body,
+        text: emailData.text || this.stripHtml(htmlContent),
+        html: htmlContent,
       });
 
       return {
@@ -155,12 +156,13 @@ class EmailService {
 
     for (const email of emails) {
       try {
+        const bulkHtml = this.ensureHtmlDocument(email.html || email.body);
         await transporter.sendMail({
           from: `"${config.fromName || 'Bulk Email Sender'}" <${config.fromEmail}>`,
           to: email.to,
           subject: email.subject,
-          text: email.text || this.stripHtml(email.html || email.body),
-          html: email.html || email.body,
+          text: email.text || this.stripHtml(bulkHtml),
+          html: bulkHtml,
         });
 
         results.sent++;
@@ -214,6 +216,39 @@ class EmailService {
    */
   stripHtml(html) {
     return html.replace(/<[^>]*>/g, '');
+  }
+
+  /**
+   * Ensure the content is a complete HTML document so email clients
+   * (especially Gmail) render it as HTML and not plain text.
+   * Strips <style> blocks from <head> since Gmail removes them anyway,
+   * so all styling must already be inline on the elements.
+   */
+  ensureHtmlDocument(content) {
+    if (!content) return '';
+    const trimmed = content.trim();
+
+    // If it's already a full HTML document, return as-is
+    if (/^<!doctype/i.test(trimmed) || /^<html/i.test(trimmed)) {
+      return trimmed;
+    }
+
+    // Wrap partial HTML in a minimal but standards-compliant email document
+    return [
+      '<!DOCTYPE html>',
+      '<html lang="en">',
+      '<head>',
+      '<meta charset="utf-8">',
+      '<meta name="viewport" content="width=device-width,initial-scale=1">',
+      '<meta http-equiv="X-UA-Compatible" content="IE=edge">',
+      '</head>',
+      '<body style="margin:0;padding:0;font-family:Arial,Helvetica,sans-serif;background-color:#f4f4f4;">',
+      '<div style="max-width:600px;margin:0 auto;background-color:#ffffff;padding:20px;">',
+      trimmed,
+      '</div>',
+      '</body>',
+      '</html>',
+    ].join('\n');
   }
 
   /**

@@ -416,8 +416,10 @@ export const dbHelpers = {
 
   async createTemplate(template) {
     const now = new Date().toISOString();
+    // Strip id/key — Firestore rejects undefined values and auto-generates the id
+    const { id: _id, key: _key, ...data } = template;
     const ref = await addDoc(userCol('templates'), {
-      ...template,
+      ...data,
       createdAt: now,
       updatedAt: now,
       status: template.status || 'draft',
@@ -451,8 +453,10 @@ export const dbHelpers = {
 
   async createCampaign(campaign) {
     const now = new Date().toISOString();
+    // Strip id/key — Firestore rejects undefined values and auto-generates the id
+    const { id: _id, key: _key, ...data } = campaign;
     const ref = await addDoc(userCol('campaigns'), {
-      ...campaign,
+      ...data,
       createdAt: now,
       updatedAt: now,
       status: campaign.status || 'draft',

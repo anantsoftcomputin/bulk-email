@@ -14,7 +14,8 @@ import {
 } from 'lucide-react';
 import { format, subDays, startOfDay, endOfDay, isWithinInterval, parseISO } from 'date-fns';
 
-const COLORS = ['#3b82f6', '#10b981', '#8b5cf6', '#f59e0b', '#ef4444', '#06b6d4'];
+const COLORS = ['#6366f1', '#10b981', '#8b5cf6', '#f59e0b', '#ef4444', '#06b6d4'];
+const SOFT_CHART = { sent: '#6366f1', opened: '#10b981', clicked: '#f59e0b' };
 
 const Analytics = () => {
   const { campaigns, initializeCampaigns, syncAllCampaignStats } = useCampaignStore();
@@ -234,8 +235,8 @@ const Analytics = () => {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center">
-          <RefreshCw className="w-10 h-10 text-blue-500 animate-spin mx-auto mb-4" />
-          <p className="text-gray-500 font-medium">Loading analytics...</p>
+          <div className="w-10 h-10 border-2 border-primary-200 border-t-primary-600 rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-sm text-gray-500">Loading analytics…</p>
         </div>
       </div>
     );
@@ -246,19 +247,19 @@ const Analytics = () => {
   return (
     <div className="space-y-8 animate-fade-in">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-4xl font-bold text-gray-900 tracking-tight">Reports</h1>
-          <p className="text-gray-600 mt-2 font-medium">Real-time performance metrics from your campaigns</p>
+          <h1 className="page-title">Reports</h1>
+          <p className="page-subtitle">Real-time performance from your campaigns</p>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+        <div className="flex items-center gap-2">
+          <div className="flex items-center bg-white border border-surface-200 rounded-xl overflow-hidden">
             {[7, 30, 90].map(d => (
               <button
                 key={d}
                 onClick={() => setDateRange(d)}
-                className={`px-4 py-2 text-sm font-semibold transition-colors ${
-                  dateRange === d ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-50'
+                className={`px-4 py-2 text-xs font-semibold transition-colors ${
+                  dateRange === d ? 'bg-primary-600 text-white' : 'text-gray-500 hover:bg-surface-50'
                 }`}
               >
                 {d}d
@@ -290,51 +291,45 @@ const Analytics = () => {
       )}
 
       {/* ─── Key Metrics Grid ──────────────────────────────── */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: 'Emails Sent', value: stats.totalSent.toLocaleString(), icon: Mail, gradient: 'from-blue-500 to-indigo-600', sub: `${stats.sentCampaigns} campaigns` },
-          { label: 'Open Rate', value: `${stats.openRate.toFixed(1)}%`, icon: Eye, gradient: 'from-emerald-500 to-teal-600', sub: `${stats.totalOpened.toLocaleString()} opens` },
-          { label: 'Click Rate', value: `${stats.clickRate.toFixed(1)}%`, icon: MousePointer, gradient: 'from-purple-500 to-pink-600', sub: `${stats.totalClicked.toLocaleString()} clicks` },
-          { label: 'Bounce Rate', value: `${stats.bounceRate.toFixed(1)}%`, icon: AlertCircle, gradient: 'from-red-500 to-rose-600', sub: `${stats.totalBounced.toLocaleString()} bounced` },
+          { label: 'Emails Sent',  value: stats.totalSent.toLocaleString(),   icon: Mail,         iconBg: 'bg-indigo-50',  iconColor: 'text-indigo-600',  sub: `${stats.sentCampaigns} campaign${stats.sentCampaigns !== 1 ? 's' : ''}` },
+          { label: 'Open Rate',    value: `${stats.openRate.toFixed(1)}%`,    icon: Eye,          iconBg: 'bg-emerald-50', iconColor: 'text-emerald-600', sub: `${stats.totalOpened.toLocaleString()} opens` },
+          { label: 'Click Rate',   value: `${stats.clickRate.toFixed(1)}%`,   icon: MousePointer, iconBg: 'bg-violet-50',  iconColor: 'text-violet-600',  sub: `${stats.totalClicked.toLocaleString()} clicks` },
+          { label: 'Bounce Rate',  value: `${stats.bounceRate.toFixed(1)}%`,  icon: AlertCircle,  iconBg: 'bg-rose-50',    iconColor: 'text-rose-600',    sub: `${stats.totalBounced.toLocaleString()} bounced` },
         ].map((stat, i) => {
           const Icon = stat.icon;
           return (
-            <div key={i} className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-bold text-gray-500 uppercase tracking-wide mb-1">{stat.label}</p>
-                  <p className="text-3xl font-bold text-gray-900 mt-2">{stat.value}</p>
-                  <p className="text-xs text-gray-400 mt-1 font-medium">{stat.sub}</p>
-                </div>
-                <div className={`w-14 h-14 bg-gradient-to-br ${stat.gradient} rounded-2xl flex items-center justify-center shadow-lg`}>
-                  <Icon className="w-7 h-7 text-white" strokeWidth={2.5} />
+            <div key={i} className="stat-card">
+              <div className="flex items-start justify-between mb-3">
+                <div className={`icon-box ${stat.iconBg}`}>
+                  <Icon className={`w-5 h-5 ${stat.iconColor}`} strokeWidth={2} />
                 </div>
               </div>
+              <p className="text-xs font-medium text-gray-500 mb-1">{stat.label}</p>
+              <p className="text-2xl font-semibold text-gray-900 tabular-nums">{stat.value}</p>
+              <p className="text-xs text-gray-400 mt-1">{stat.sub}</p>
             </div>
           );
         })}
       </div>
 
       {/* ─── Secondary Metrics ────────────────────────────── */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         {[
-          { label: 'Contacts', value: stats.totalContacts, icon: Users, color: 'text-blue-600 bg-blue-50' },
-          { label: 'Active', value: stats.activeContacts, icon: CheckCircle2, color: 'text-emerald-600 bg-emerald-50' },
-          { label: 'Templates', value: stats.totalTemplates, icon: Inbox, color: 'text-purple-600 bg-purple-50' },
-          { label: 'Delivered', value: `${stats.deliveryRate.toFixed(1)}%`, icon: Send, color: 'text-teal-600 bg-teal-50' },
-          { label: 'Click-to-Open', value: `${stats.ctr.toFixed(1)}%`, icon: Zap, color: 'text-amber-600 bg-amber-50' },
-          { label: 'Queue', value: `${stats.queuePending} pending`, icon: Clock, color: 'text-gray-600 bg-gray-50' },
+          { label: 'Contacts',      value: stats.totalContacts,             icon: Users,       iconBg: 'bg-blue-50',    iconColor: 'text-blue-500'   },
+          { label: 'Active',        value: stats.activeContacts,            icon: CheckCircle2,iconBg: 'bg-emerald-50', iconColor: 'text-emerald-500'},
+          { label: 'Templates',     value: stats.totalTemplates,            icon: Inbox,       iconBg: 'bg-violet-50',  iconColor: 'text-violet-500' },
+          { label: 'Delivery Rate', value: `${stats.deliveryRate.toFixed(1)}%`, icon: Send,   iconBg: 'bg-teal-50',    iconColor: 'text-teal-500'   },
+          { label: 'Cl.-to-Open',   value: `${stats.ctr.toFixed(1)}%`,     icon: Zap,         iconBg: 'bg-amber-50',   iconColor: 'text-amber-500'  },
+          { label: 'Queued',        value: stats.queuePending,              icon: Clock,       iconBg: 'bg-gray-50',    iconColor: 'text-gray-500'   },
         ].map((m, i) => {
           const Icon = m.icon;
           return (
-            <div key={i} className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-              <div className="flex items-center gap-2 mb-2">
-                <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${m.color}`}>
-                  <Icon size={16} />
-                </div>
-                <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">{m.label}</span>
-              </div>
-              <p className="text-xl font-bold text-gray-900">{typeof m.value === 'number' ? m.value.toLocaleString() : m.value}</p>
+            <div key={i} className="bg-white rounded-xl border border-surface-200 p-4" style={{ boxShadow: '0 1px 3px 0 rgba(0,0,0,0.04)' }}>
+              <div className={`icon-box ${m.iconBg} mb-3`}><Icon className={`w-4 h-4 ${m.iconColor}`} /></div>
+              <p className="text-lg font-semibold text-gray-900 tabular-nums">{typeof m.value === 'number' ? m.value.toLocaleString() : m.value}</p>
+              <p className="text-xs text-gray-400 mt-0.5">{m.label}</p>
             </div>
           );
         })}
@@ -343,14 +338,15 @@ const Analytics = () => {
       {/* ─── Charts Row 1 ────────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Sending Activity Over Time */}
-        <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center">
-              <Activity className="w-5 h-5 text-white" />
-            </div>
+        <div className="card">
+          <div className="flex items-center justify-between mb-5">
             <div>
-              <h2 className="text-lg font-bold text-gray-900">Sending Activity</h2>
-              <p className="text-xs text-gray-500">Last {dateRange} days</p>
+              <h2 className="text-sm font-semibold text-gray-900">Sending Activity</h2>
+              <p className="text-xs text-gray-500 mt-0.5">Last {dateRange} days</p>
+            </div>
+            <div className="flex items-center gap-3 text-xs text-gray-400">
+              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-indigo-500 inline-block" />Sent</span>
+              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block" />Opened</span>
             </div>
           </div>
           {activityData.some(d => d.sent > 0) ? (
@@ -358,22 +354,21 @@ const Analytics = () => {
               <AreaChart data={activityData}>
                 <defs>
                   <linearGradient id="sentGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.3} />
-                    <stop offset="100%" stopColor="#3b82f6" stopOpacity={0} />
+                    <stop offset="0%" stopColor="#6366f1" stopOpacity={0.18} />
+                    <stop offset="100%" stopColor="#6366f1" stopOpacity={0} />
                   </linearGradient>
                   <linearGradient id="openedGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#10b981" stopOpacity={0.3} />
+                    <stop offset="0%" stopColor="#10b981" stopOpacity={0.18} />
                     <stop offset="100%" stopColor="#10b981" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#9ca3af' }} />
-                <YAxis tick={{ fontSize: 11, fill: '#9ca3af' }} />
-                <Tooltip contentStyle={{ backgroundColor: 'white', border: '1px solid #e5e7eb', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }} />
-                <Legend />
-                <Area type="monotone" dataKey="sent" stroke="#3b82f6" fill="url(#sentGrad)" strokeWidth={2} name="Sent" />
-                <Area type="monotone" dataKey="opened" stroke="#10b981" fill="url(#openedGrad)" strokeWidth={2} name="Opened" />
-                <Line type="monotone" dataKey="clicked" stroke="#8b5cf6" strokeWidth={2} dot={false} name="Clicked" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                <Tooltip contentStyle={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '10px', fontSize: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }} cursor={{ stroke: '#e2e8f0', strokeWidth: 1 }} />
+                <Legend wrapperStyle={{ fontSize: '12px' }} />
+                <Area type="monotone" dataKey="sent" stroke="#6366f1" fill="url(#sentGrad)" strokeWidth={2} dot={false} name="Sent" />
+                <Area type="monotone" dataKey="opened" stroke="#10b981" fill="url(#openedGrad)" strokeWidth={2} dot={false} name="Opened" />
               </AreaChart>
             </ResponsiveContainer>
           ) : (
@@ -387,27 +382,22 @@ const Analytics = () => {
         </div>
 
         {/* Campaign Performance Bar Chart */}
-        <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center">
-              <BarChart3 className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <h2 className="text-lg font-bold text-gray-900">Campaign Performance</h2>
-              <p className="text-xs text-gray-500">Top {campaignChartData.length} campaigns by volume</p>
-            </div>
+        <div className="card">
+          <div className="mb-5">
+            <h2 className="text-sm font-semibold text-gray-900">Campaign Performance</h2>
+            <p className="text-xs text-gray-500 mt-0.5">Top {campaignChartData.length} campaigns by volume</p>
           </div>
           {campaignChartData.length > 0 ? (
             <ResponsiveContainer width="100%" height={280}>
               <BarChart data={campaignChartData} barCategoryGap="20%">
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="name" tick={{ fontSize: 10, fill: '#9ca3af' }} />
-                <YAxis tick={{ fontSize: 11, fill: '#9ca3af' }} />
-                <Tooltip contentStyle={{ backgroundColor: 'white', border: '1px solid #e5e7eb', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }} />
-                <Legend />
-                <Bar dataKey="sent" fill="#3b82f6" name="Sent" radius={[6, 6, 0, 0]} />
-                <Bar dataKey="opened" fill="#10b981" name="Opened" radius={[6, 6, 0, 0]} />
-                <Bar dataKey="clicked" fill="#8b5cf6" name="Clicked" radius={[6, 6, 0, 0]} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                <XAxis dataKey="name" tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                <Tooltip contentStyle={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '10px', fontSize: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }} />
+                <Legend wrapperStyle={{ fontSize: '12px' }} />
+                <Bar dataKey="sent" fill="#6366f1" name="Sent" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="opened" fill="#10b981" name="Opened" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="clicked" fill="#8b5cf6" name="Clicked" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           ) : (
@@ -424,13 +414,8 @@ const Analytics = () => {
       {/* ─── Charts Row 2 ────────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Email Status Pie */}
-        <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center">
-              <TrendingUp className="w-5 h-5 text-white" />
-            </div>
-            <h2 className="text-lg font-bold text-gray-900">Email Status</h2>
-          </div>
+        <div className="card">
+          <h2 className="text-sm font-semibold text-gray-900 mb-5">Email Status</h2>
           <ResponsiveContainer width="100%" height={240}>
             <PieChart>
               <Pie
@@ -453,13 +438,8 @@ const Analytics = () => {
         </div>
 
         {/* Campaign Status Pie */}
-        <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl flex items-center justify-center">
-              <Send className="w-5 h-5 text-white" />
-            </div>
-            <h2 className="text-lg font-bold text-gray-900">Campaign Status</h2>
-          </div>
+        <div className="card">
+          <h2 className="text-sm font-semibold text-gray-900 mb-5">Campaign Status</h2>
           <ResponsiveContainer width="100%" height={240}>
             <PieChart>
               <Pie
@@ -482,29 +462,24 @@ const Analytics = () => {
         </div>
 
         {/* Contact Growth */}
-        <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-xl flex items-center justify-center">
-              <Users className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <h2 className="text-lg font-bold text-gray-900">Contact Growth</h2>
-              <p className="text-xs text-gray-500">Cumulative contacts</p>
-            </div>
+        <div className="card">
+          <div className="mb-5">
+            <h2 className="text-sm font-semibold text-gray-900">Contact Growth</h2>
+            <p className="text-xs text-gray-500 mt-0.5">Cumulative contacts over time</p>
           </div>
           <ResponsiveContainer width="100%" height={240}>
             <AreaChart data={contactGrowthData}>
               <defs>
                 <linearGradient id="contactGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#06b6d4" stopOpacity={0.3} />
-                  <stop offset="100%" stopColor="#06b6d4" stopOpacity={0} />
+                  <stop offset="0%" stopColor="#6366f1" stopOpacity={0.18} />
+                  <stop offset="100%" stopColor="#6366f1" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#9ca3af' }} />
-              <YAxis tick={{ fontSize: 11, fill: '#9ca3af' }} />
-              <Tooltip contentStyle={{ borderRadius: '12px', border: '1px solid #e5e7eb' }} />
-              <Area type="monotone" dataKey="contacts" stroke="#06b6d4" fill="url(#contactGrad)" strokeWidth={2} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+              <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+              <Tooltip contentStyle={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '10px', fontSize: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }} cursor={{ stroke: '#e2e8f0', strokeWidth: 1 }} />
+              <Area type="monotone" dataKey="contacts" stroke="#6366f1" fill="url(#contactGrad)" strokeWidth={2} dot={false} />
             </AreaChart>
           </ResponsiveContainer>
         </div>
@@ -512,51 +487,40 @@ const Analytics = () => {
 
       {/* ─── Top Campaigns Table ─────────────────────────── */}
       {topCampaigns.length > 0 && (
-        <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-blue-600 rounded-xl flex items-center justify-center">
-              <TrendingUp className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <h2 className="text-lg font-bold text-gray-900">Top Performing Campaigns</h2>
-              <p className="text-xs text-gray-500">Ranked by open rate</p>
-            </div>
+        <div className="card p-0 overflow-hidden">
+          <div className="px-6 py-4 border-b border-surface-100">
+            <h2 className="text-sm font-semibold text-gray-900">Top Performing Campaigns</h2>
+            <p className="text-xs text-gray-500 mt-0.5">Ranked by open rate</p>
           </div>
-          <div className="overflow-hidden rounded-xl border border-gray-100">
-            <table className="w-full text-sm">
+          <div className="overflow-x-auto">
+            <table className="data-table">
               <thead>
-                <tr className="bg-gray-50 text-left">
-                  <th className="px-5 py-3 font-bold text-gray-500 uppercase tracking-wider text-xs">#</th>
-                  <th className="px-5 py-3 font-bold text-gray-500 uppercase tracking-wider text-xs">Campaign</th>
-                  <th className="px-5 py-3 font-bold text-gray-500 uppercase tracking-wider text-xs text-right">Sent</th>
-                  <th className="px-5 py-3 font-bold text-gray-500 uppercase tracking-wider text-xs text-right">Open Rate</th>
-                  <th className="px-5 py-3 font-bold text-gray-500 uppercase tracking-wider text-xs text-right">Click Rate</th>
-                  <th className="px-5 py-3 font-bold text-gray-500 uppercase tracking-wider text-xs">Status</th>
+                <tr>
+                  <th>#</th>
+                  <th>Campaign</th>
+                  <th className="text-right">Sent</th>
+                  <th className="text-right">Open Rate</th>
+                  <th className="text-right">Click Rate</th>
+                  <th>Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody>
                 {topCampaigns.map((c, i) => (
-                  <tr key={c.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-5 py-4 text-gray-400 font-bold">{i + 1}</td>
-                    <td className="px-5 py-4">
-                      <div className="font-semibold text-gray-900">{c.name}</div>
-                      {c.sentAt && <div className="text-xs text-gray-400 mt-0.5">{format(new Date(c.sentAt), 'MMM dd, yyyy')}</div>}
+                  <tr key={c.id}>
+                    <td className="text-gray-400 font-medium">{i + 1}</td>
+                    <td>
+                      <p className="font-medium text-gray-900">{c.name}</p>
+                      {c.sentAt && <p className="text-xs text-gray-400">{format(new Date(c.sentAt), 'MMM dd, yyyy')}</p>}
                     </td>
-                    <td className="px-5 py-4 text-right font-semibold text-gray-900">{(c.stats.sent || 0).toLocaleString()}</td>
-                    <td className="px-5 py-4 text-right">
-                      <span className={`inline-flex items-center gap-1 font-bold ${c.openRate >= 30 ? 'text-emerald-600' : c.openRate >= 15 ? 'text-amber-600' : 'text-red-500'}`}>
+                    <td className="text-right font-medium text-gray-700">{(c.stats.sent || 0).toLocaleString()}</td>
+                    <td className="text-right">
+                      <span className={`font-semibold ${c.openRate >= 30 ? 'text-emerald-600' : c.openRate >= 15 ? 'text-amber-600' : 'text-rose-500'}`}>
                         {c.openRate.toFixed(1)}%
-                        {c.openRate >= 30 ? <ArrowUpRight size={14} /> : c.openRate < 15 ? <ArrowDownRight size={14} /> : null}
                       </span>
                     </td>
-                    <td className="px-5 py-4 text-right font-semibold text-gray-700">{c.clickRate.toFixed(1)}%</td>
-                    <td className="px-5 py-4">
-                      <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                        c.status === 'sent' ? 'bg-emerald-100 text-emerald-700' :
-                        c.status === 'sending' ? 'bg-blue-100 text-blue-700' :
-                        c.status === 'scheduled' ? 'bg-purple-100 text-purple-700' :
-                        'bg-gray-100 text-gray-600'
-                      }`}>
+                    <td className="text-right font-medium text-violet-600">{c.clickRate.toFixed(1)}%</td>
+                    <td>
+                      <span className={`badge ${ c.status === 'sent' ? 'badge-sent' : c.status === 'sending' ? 'badge-sending' : c.status === 'scheduled' ? 'badge-scheduled' : 'badge-draft' } capitalize`}>
                         {c.status}
                       </span>
                     </td>
@@ -570,81 +534,68 @@ const Analytics = () => {
 
       {/* ─── Email Queue Summary ─────────────────────────── */}
       {queueTotal > 0 && (
-        <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 bg-gradient-to-br from-gray-500 to-gray-700 rounded-xl flex items-center justify-center">
-              <Clock className="w-5 h-5 text-white" />
-            </div>
-            <h2 className="text-lg font-bold text-gray-900">Email Queue</h2>
-          </div>
-          <div className="grid grid-cols-4 gap-4">
+        <div className="card">
+          <h2 className="text-sm font-semibold text-gray-900 mb-4">Email Queue</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
-              { label: 'Pending', value: emailQueueStats.pending, color: 'text-amber-600 bg-amber-50' },
-              { label: 'Processing', value: emailQueueStats.processing, color: 'text-blue-600 bg-blue-50' },
-              { label: 'Sent', value: emailQueueStats.sent, color: 'text-emerald-600 bg-emerald-50' },
-              { label: 'Failed', value: emailQueueStats.failed, color: 'text-red-600 bg-red-50' },
+              { label: 'Pending',    value: emailQueueStats.pending,    bg: 'bg-amber-50',   text: 'text-amber-700'  },
+              { label: 'Processing', value: emailQueueStats.processing, bg: 'bg-blue-50',    text: 'text-blue-700'   },
+              { label: 'Sent',       value: emailQueueStats.sent,       bg: 'bg-emerald-50', text: 'text-emerald-700'},
+              { label: 'Failed',     value: emailQueueStats.failed,     bg: 'bg-rose-50',    text: 'text-rose-700'   },
             ].map((q, i) => (
-              <div key={i} className={`rounded-xl p-4 text-center ${q.color}`}>
-                <p className="text-2xl font-bold">{q.value}</p>
-                <p className="text-xs font-semibold uppercase tracking-wider mt-1">{q.label}</p>
+              <div key={i} className={`rounded-xl p-3 text-center border ${ q.bg }`} style={{ borderColor: 'transparent' }}>
+                <p className={`text-xl font-semibold ${q.text} tabular-nums`}>{q.value}</p>
+                <p className="text-xs text-gray-500 mt-1">{q.label}</p>
               </div>
             ))}
           </div>
-          {/* Progress bar */}
-          <div className="mt-4 h-3 rounded-full bg-gray-100 overflow-hidden flex">
-            {emailQueueStats.sent > 0 && <div className="bg-emerald-500 transition-all" style={{ width: `${(emailQueueStats.sent / queueTotal) * 100}%` }}></div>}
-            {emailQueueStats.processing > 0 && <div className="bg-blue-500 transition-all" style={{ width: `${(emailQueueStats.processing / queueTotal) * 100}%` }}></div>}
-            {emailQueueStats.pending > 0 && <div className="bg-amber-400 transition-all" style={{ width: `${(emailQueueStats.pending / queueTotal) * 100}%` }}></div>}
-            {emailQueueStats.failed > 0 && <div className="bg-red-500 transition-all" style={{ width: `${(emailQueueStats.failed / queueTotal) * 100}%` }}></div>}
+          <div className="mt-3 h-2 rounded-full bg-surface-100 overflow-hidden flex gap-0.5">
+            {emailQueueStats.sent > 0       && <div className="bg-emerald-400" style={{ width: `${(emailQueueStats.sent       / queueTotal) * 100}%` }} />}
+            {emailQueueStats.processing > 0 && <div className="bg-blue-400"    style={{ width: `${(emailQueueStats.processing / queueTotal) * 100}%` }} />}
+            {emailQueueStats.pending > 0    && <div className="bg-amber-400"   style={{ width: `${(emailQueueStats.pending    / queueTotal) * 100}%` }} />}
+            {emailQueueStats.failed > 0     && <div className="bg-rose-400"    style={{ width: `${(emailQueueStats.failed     / queueTotal) * 100}%` }} />}
           </div>
         </div>
       )}
 
       {/* ─── Recent Tracking Events ──────────────────────── */}
       {trackingEvents.length > 0 && (
-        <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-xl flex items-center justify-center">
-              <Activity className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <h2 className="text-lg font-bold text-gray-900">Live Tracking Events</h2>
-              <p className="text-xs text-gray-500">{trackingEvents.length} total events recorded</p>
-            </div>
+        <div className="card p-0 overflow-hidden">
+          <div className="px-6 py-4 border-b border-surface-100">
+            <h2 className="text-sm font-semibold text-gray-900">Live Tracking Events</h2>
+            <p className="text-xs text-gray-500 mt-0.5">{trackingEvents.length} events recorded</p>
           </div>
-          <div className="overflow-hidden rounded-xl border border-gray-100">
-            <table className="w-full text-sm">
+          <div className="overflow-x-auto">
+            <table className="data-table">
               <thead>
-                <tr className="bg-gray-50 text-left">
-                  <th className="px-5 py-3 font-bold text-gray-500 uppercase tracking-wider text-xs">Type</th>
-                  <th className="px-5 py-3 font-bold text-gray-500 uppercase tracking-wider text-xs">Campaign</th>
-                  <th className="px-5 py-3 font-bold text-gray-500 uppercase tracking-wider text-xs">Timestamp</th>
-                  <th className="px-5 py-3 font-bold text-gray-500 uppercase tracking-wider text-xs">Details</th>
+                <tr>
+                  <th>Type</th>
+                  <th>Campaign</th>
+                  <th>Timestamp</th>
+                  <th>Details</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody>
                 {trackingEvents
                   .sort((a, b) => (b.timestamp || '').localeCompare(a.timestamp || ''))
                   .slice(0, 20)
                   .map((event, i) => {
                     const campaign = campaigns.find(c => c.id === event.campaignId || String(c.id) === String(event.campaignId));
                     return (
-                      <tr key={event.id || i} className="hover:bg-gray-50 transition-colors">
-                        <td className="px-5 py-3">
-                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                            event.type === 'open' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'
-                          }`}>
-                            {event.type === 'open' ? <Eye size={11} /> : <MousePointer size={11} />}
+                      <tr key={event.id || i}>
+                        <td>
+                          <span className={`badge ${ event.type === 'open' ? 'badge-sending' : 'badge-scheduled' }`}>
+                            {event.type === 'open' ? <Eye className="w-3 h-3" /> : <MousePointer className="w-3 h-3" />}
                             {event.type}
                           </span>
                         </td>
-                        <td className="px-5 py-3 font-medium text-gray-900">
+                        <td className="font-medium text-gray-900">
                           {campaign?.name || `Campaign ${event.campaignId}`}
                         </td>
-                        <td className="px-5 py-3 text-gray-500 text-xs">
-                          {event.timestamp ? format(new Date(event.timestamp), 'MMM dd, yyyy HH:mm:ss') : '—'}
+                        <td className="text-gray-400 text-xs">
+                          {event.timestamp ? format(new Date(event.timestamp), 'MMM dd, yyyy HH:mm') : '—'}
                         </td>
-                        <td className="px-5 py-3 text-gray-400 text-xs truncate max-w-[200px]">
+                        <td className="text-gray-400 text-xs truncate max-w-[200px]">
                           {event.type === 'click' ? event.url : (event.userAgent || '').substring(0, 50)}
                         </td>
                       </tr>

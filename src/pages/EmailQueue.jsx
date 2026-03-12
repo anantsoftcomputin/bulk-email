@@ -1,8 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { RefreshCw, Trash2, Play, Pause, CheckCircle, XCircle, Clock } from 'lucide-react';
-import Card from '../components/common/Card';
-import Button from '../components/common/Button';
-import Table from '../components/common/Table';
+import { RefreshCw, Trash2, Play, Pause, CheckCircle, XCircle, Clock, AlertTriangle } from 'lucide-react';
 import { db, dbHelpers } from '../db/database';
 import emailQueueService from '../services/emailQueue';
 import toast from 'react-hot-toast';
@@ -180,139 +177,171 @@ const EmailQueue = () => {
   ];
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-gray-900">Email Queue</h1>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
+    <div className="space-y-5">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="page-title">Email Queue</h1>
+          <p className="page-subtitle">Monitor and manage outgoing email delivery</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
             onClick={loadQueueData}
-            icon={<RefreshCw className="w-4 h-4" />}
+            className="flex items-center gap-2 px-3 py-2 text-xs font-medium border border-surface-200 rounded-lg text-gray-600 hover:bg-surface-50 transition-colors"
           >
-            Refresh
-          </Button>
-          <Button
-            variant={isProcessing ? 'outline' : 'primary'}
+            <RefreshCw className="w-3.5 h-3.5" /> Refresh
+          </button>
+          <button
             onClick={handlePauseResume}
-            icon={isProcessing ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+            className={`flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg transition-colors ${
+              isProcessing
+                ? 'border border-amber-200 text-amber-700 bg-amber-50 hover:bg-amber-100'
+                : 'btn-primary'
+            }`}
           >
+            {isProcessing ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
             {isProcessing ? 'Pause Queue' : 'Resume Queue'}
-          </Button>
+          </button>
+        </div>
+      </div>
 
-      {/* Important Notice for Large Queues */}
+      {/* Processing Notice */}
       {isProcessing && stats.pending > 0 && (
-        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-start gap-3">
-          <div className="flex-shrink-0 mt-0.5">
-            <svg className="w-5 h-5 text-amber-600" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-            </svg>
-          </div>
-          <div className="flex-1">
-            <h3 className="font-semibold text-amber-900 mb-1">Keep This Browser Tab Open</h3>
-            <p className="text-sm text-amber-800">
-              Queue is processing <strong>{stats.pending} pending emails</strong> at <strong>300 emails/hour</strong>. 
-              Estimated time: <strong>{Math.ceil(stats.pending / 5)} minutes</strong>. 
-              Do not close this tab until processing completes.
+        <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl p-4">
+          <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-semibold text-amber-800">Keep This Tab Open</p>
+            <p className="text-xs text-amber-700 mt-0.5">
+              Processing <strong>{stats.pending} pending emails</strong> at 300/hr. Estimated: <strong>{Math.ceil(stats.pending / 5)} min</strong>.
             </p>
           </div>
         </div>
       )}
-        </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {[
+          { label: 'Pending',    value: stats.pending,    icon: Clock,       iconBg: 'bg-amber-50',   iconColor: 'text-amber-500'  },
+          { label: 'Processing', value: stats.processing,  icon: RefreshCw,   iconBg: 'bg-blue-50',    iconColor: 'text-blue-500', spin: stats.processing > 0 },
+          { label: 'Sent',       value: stats.sent,        icon: CheckCircle, iconBg: 'bg-emerald-50', iconColor: 'text-emerald-500'},
+          { label: 'Failed',     value: stats.failed,      icon: XCircle,     iconBg: 'bg-rose-50',    iconColor: 'text-rose-500'  },
+        ].map((s, i) => {
+          const Icon = s.icon;
+          return (
+            <div key={i} className="stat-card">
+              <div className={`icon-box ${s.iconBg} mb-3`}>
+                <Icon className={`w-5 h-5 ${s.iconColor} ${s.spin ? 'animate-spin' : ''}`} />
+              </div>
+              <p className="text-2xl font-semibold text-gray-900 tabular-nums">{s.value}</p>
+              <p className="text-xs text-gray-500 mt-0.5">{s.label}</p>
+            </div>
+          );
+        })}
       </div>
 
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Pending</p>
-              <p className="text-3xl font-bold text-gray-900">{stats.pending}</p>
-            </div>
-            <Clock className="w-12 h-12 text-gray-400" />
-          </div>
-        </Card>
-        <Card>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Processing</p>
-              <p className="text-3xl font-bold text-blue-600">{stats.processing}</p>
-            </div>
-            <RefreshCw className={`w-12 h-12 text-blue-400 ${stats.processing > 0 ? 'animate-spin' : ''}`} />
-          </div>
-        </Card>
-        <Card>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Sent</p>
-              <p className="text-3xl font-bold text-green-600">{stats.sent}</p>
-            </div>
-            <CheckCircle className="w-12 h-12 text-green-400" />
-          </div>
-        </Card>
-        <Card>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Failed</p>
-              <p className="text-3xl font-bold text-red-600">{stats.failed}</p>
-            </div>
-            <XCircle className="w-12 h-12 text-red-400" />
-          </div>
-        </Card>
+      {/* Queue Actions */}
+      <div className="flex flex-wrap items-center gap-2">
+        <button
+          onClick={handleRetryFailed}
+          disabled={stats.failed === 0}
+          className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium border border-surface-200 rounded-lg text-gray-600 hover:bg-surface-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+        >
+          <RefreshCw className="w-3.5 h-3.5" /> Retry All Failed
+        </button>
+        <button
+          onClick={handleClearSent}
+          disabled={stats.sent === 0}
+          className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium border border-surface-200 rounded-lg text-gray-600 hover:bg-surface-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+        >
+          <Trash2 className="w-3.5 h-3.5" /> Clear Sent
+        </button>
+        <button
+          onClick={handleClearFailed}
+          disabled={stats.failed === 0}
+          className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium border border-rose-200 rounded-lg text-rose-600 hover:bg-rose-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+        >
+          <Trash2 className="w-3.5 h-3.5" /> Clear Failed
+        </button>
       </div>
 
-      {/* Queue Management Actions */}
-      <Card>
-        <div className="flex flex-wrap gap-3">
-          <Button
-            variant="outline"
-            onClick={handleRetryFailed}
-            disabled={stats.failed === 0}
-          >
-            Retry All Failed
-          </Button>
-          <Button
-            variant="outline"
-            onClick={handleClearSent}
-            disabled={stats.sent === 0}
-          >
-            Clear Sent
-          </Button>
-          <Button
-            variant="outline"
-            onClick={handleClearFailed}
-            disabled={stats.failed === 0}
-            className="border-red-300 text-red-600 hover:bg-red-50"
-          >
-            Clear Failed
-          </Button>
-        </div>
-      </Card>
-
-      {/* Filter Tabs */}
-      <Card>
-        <div className="flex gap-2 mb-4">
+      {/* Filter + Table */}
+      <div className="card p-0 overflow-hidden">
+        <div className="flex items-center gap-1.5 p-4 border-b border-surface-100">
           {['all', 'pending', 'processing', 'sent', 'failed'].map((status) => (
             <button
               key={status}
               onClick={() => setFilter(status)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors capitalize ${
                 filter === status
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-primary-600 text-white'
+                  : 'text-gray-500 hover:bg-surface-50'
               }`}
             >
-              {status.charAt(0).toUpperCase() + status.slice(1)}
+              {status}
               {status !== 'all' && ` (${stats[status] || 0})`}
             </button>
           ))}
         </div>
 
-        <Table
-          columns={columns}
-          data={queueItems}
-          emptyMessage="No emails in queue"
-        />
-      </Card>
+        <div className="overflow-x-auto">
+          {queueItems.length === 0 ? (
+            <div className="py-16 text-center">
+              <Clock className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+              <p className="text-sm text-gray-400">No emails in queue</p>
+            </div>
+          ) : (
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Contact</th>
+                  <th>Campaign</th>
+                  <th>Status</th>
+                  <th>Priority</th>
+                  <th>Scheduled</th>
+                  <th>Sent At</th>
+                  <th>Retries</th>
+                  <th>Error</th>
+                </tr>
+              </thead>
+              <tbody>
+                {queueItems.map((row, i) => (
+                  <tr key={row.id || i}>
+                    <td>
+                      <p className="font-medium text-gray-900">{row.contactName}</p>
+                      <p className="text-xs text-gray-400">{row.contactEmail}</p>
+                    </td>
+                    <td className="text-gray-700">{row.campaignName}</td>
+                    <td>
+                      <span className={`badge ${
+                        row.status === 'sent'       ? 'badge-sent' :
+                        row.status === 'processing' ? 'badge-sending' :
+                        row.status === 'failed'     ? 'badge-failed' :
+                        'badge-draft'
+                      } capitalize`}>
+                        {row.status === 'sent'       && <CheckCircle className="w-3 h-3" />}
+                        {row.status === 'failed'     && <XCircle className="w-3 h-3" />}
+                        {row.status === 'pending'    && <Clock className="w-3 h-3" />}
+                        {row.status}
+                      </span>
+                    </td>
+                    <td>
+                      <span className={`text-xs font-medium ${
+                        row.priority === 'high'   ? 'text-rose-600' :
+                        row.priority === 'normal' ? 'text-blue-600' :
+                        'text-gray-500'
+                      }`}>{row.priority}</span>
+                    </td>
+                    <td className="text-xs text-gray-500">{format(new Date(row.scheduledAt), 'MMM dd, HH:mm')}</td>
+                    <td className="text-xs text-gray-500">{row.sentAt ? format(new Date(row.sentAt), 'MMM dd, HH:mm') : '—'}</td>
+                    <td className="text-xs text-gray-500 text-center">{row.retryCount || 0}</td>
+                    <td className="text-xs text-rose-500 max-w-[160px] truncate" title={row.error}>{row.error || '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </div>
     </div>
   );
 };

@@ -271,6 +271,132 @@ function renderFooterBlock(block, settings) {
     </tr>`;
 }
 
+function renderVideoBlock(block, settings) {
+  const p = block.properties;
+  const font = fontStack(settings.fontFamily);
+  const url = p.url || '';
+  // Extract YouTube/Vimeo ID for thumbnail
+  let thumbnailUrl = p.thumbnailUrl || '';
+  let videoLink = url;
+  const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\s]+)/);
+  const vimeoMatch = url.match(/vimeo\.com\/(\d+)/);
+  if (ytMatch && !thumbnailUrl) {
+    thumbnailUrl = `https://img.youtube.com/vi/${ytMatch[1]}/maxresdefault.jpg`;
+    videoLink = `https://www.youtube.com/watch?v=${ytMatch[1]}`;
+  } else if (vimeoMatch && !thumbnailUrl) {
+    thumbnailUrl = `https://vumbnail.com/${vimeoMatch[1]}.jpg`;
+    videoLink = `https://vimeo.com/${vimeoMatch[1]}`;
+  }
+  const thumb = thumbnailUrl || 'https://placehold.co/560x315/1a1a2e/ffffff?text=▶+Video';
+  return `
+    <tr>
+      <td align="${p.alignment || 'center'}" style="padding:${p.padding || '20px 40px'};background-color:${p.backgroundColor || '#ffffff'};">
+        <a href="${escHtml(videoLink || '#')}" target="_blank" style="display:block;text-decoration:none;position:relative;">
+          <img src="${escHtml(thumb)}" alt="${escHtml(p.altText || 'Watch Video')}" width="${p.width || 560}" style="display:block;max-width:100%;height:auto;border:0;border-radius:${p.borderRadius || '8px'};" />
+          <!-- Play button overlay (shows in some clients) -->
+          <div style="text-align:center;margin-top:12px;">
+            <span style="display:inline-block;padding:10px 24px;background-color:${p.buttonColor || '#dc2626'};color:#ffffff;border-radius:6px;font-family:${font};font-size:14px;font-weight:600;text-decoration:none;">▶ ${escHtml(p.buttonLabel || 'Watch Video')}</span>
+          </div>
+        </a>
+        ${p.caption ? `<p style="margin:8px 0 0 0;font-family:${font};font-size:12px;color:#6b7280;text-align:center;">${escHtml(p.caption)}</p>` : ''}
+      </td>
+    </tr>`;
+}
+
+function renderTestimonialBlock(block, settings) {
+  const p = block.properties;
+  const font = fontStack(settings.fontFamily);
+  const stars = '★'.repeat(Math.min(5, Math.max(0, p.rating || 5)));
+  const emptyStars = '★'.repeat(5 - Math.min(5, Math.max(0, p.rating || 5)));
+  return `
+    <tr>
+      <td style="padding:${p.padding || '30px 40px'};background-color:${p.backgroundColor || '#f8fafc'};">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:${p.cardBg || '#ffffff'};border-radius:${p.borderRadius || '12px'};border:1px solid ${p.borderColor || '#e2e8f0'};">
+          <tr>
+            <td style="padding:${p.innerPadding || '28px'};font-family:${font};">
+              ${p.showStars !== false ? `<p style="margin:0 0 12px 0;font-size:20px;line-height:1;"><span style="color:${p.starColor || '#f59e0b'};">${stars}</span><span style="color:#e2e8f0;">${emptyStars}</span></p>` : ''}
+              <p style="margin:0 0 20px 0;font-size:${p.quoteSize || '17px'};color:${p.quoteColor || '#1e293b'};line-height:1.6;font-style:italic;">&ldquo;${escHtml(p.quote || 'This product changed my life. Highly recommended!')}&rdquo;</p>
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  ${p.avatarUrl ? `<td style="padding-right:12px;vertical-align:middle;"><img src="${escHtml(p.avatarUrl)}" alt="${escHtml(p.name || '')}" width="${p.avatarSize || 44}" height="${p.avatarSize || 44}" style="border-radius:50%;display:block;border:0;" /></td>` : ''}
+                  <td style="vertical-align:middle;">
+                    <p style="margin:0;font-weight:700;font-size:14px;color:${p.nameColor || '#0f172a'};">${escHtml(p.name || 'John Doe')}</p>
+                    ${p.title || p.company ? `<p style="margin:2px 0 0 0;font-size:12px;color:${p.titleColor || '#64748b'};">${escHtml(p.title || '')}${p.title && p.company ? ', ' : ''}${escHtml(p.company || '')}</p>` : ''}
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>`;
+}
+
+function renderProductsBlock(block, settings) {
+  const p = block.properties;
+  const font = fontStack(settings.fontFamily);
+  const items = p.items || [];
+  const cols = p.columns || 2;
+  const itemWidth = Math.floor(560 / cols) - 10;
+  const itemsHtml = items.map((item, i) => {
+    const isLast = i % cols === cols - 1 || i === items.length - 1;
+    return `
+      <!--[if mso]><td valign="top" width="${itemWidth}" style="width:${itemWidth}px;${!isLast ? 'padding-right:16px;' : ''}"><![endif]-->
+      <div class="email-col" style="display:inline-block;vertical-align:top;width:100%;max-width:${itemWidth}px;${!isLast ? 'padding-right:0;' : ''}">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:${p.cardBg || '#ffffff'};border-radius:${p.borderRadius || '8px'};border:1px solid ${p.borderColor || '#e2e8f0'};overflow:hidden;">
+          <tr>
+            ${item.imageUrl ? `<td><img src="${escHtml(item.imageUrl)}" alt="${escHtml(item.name || 'Product')}" width="${itemWidth}" style="display:block;max-width:100%;height:auto;border:0;" /></td></tr><tr>` : ''}
+            <td style="padding:${p.cardPadding || '16px'};font-family:${font};">
+              ${item.badge ? `<p style="margin:0 0 6px 0;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:${p.badgeColor || '#3b82f6'};background-color:${p.badgeBg || '#eff6ff'};display:inline-block;padding:3px 8px;border-radius:4px;">${escHtml(item.badge)}</p>` : ''}
+              <p style="margin:${item.badge ? '8px' : '0'} 0 4px 0;font-size:${p.nameSize || '15px'};font-weight:700;color:${p.nameColor || '#0f172a'};">${escHtml(item.name || 'Product Name')}</p>
+              ${item.description ? `<p style="margin:0 0 10px 0;font-size:${p.descSize || '13px'};color:${p.descColor || '#64748b'};line-height:1.5;">${escHtml(item.description)}</p>` : ''}
+              ${item.price ? `<p style="margin:0 0 12px 0;font-size:${p.priceSize || '18px'};font-weight:800;color:${p.priceColor || '#0f172a'};">${escHtml(item.price)}${item.originalPrice ? `<span style="font-size:13px;color:#94a3b8;text-decoration:line-through;margin-left:6px;">${escHtml(item.originalPrice)}</span>` : ''}</p>` : ''}
+              ${item.ctaText ? `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td align="center" bgcolor="${p.ctaColor || '#1a56db'}" style="border-radius:6px;background-color:${p.ctaColor || '#1a56db'};"><a href="${escHtml(item.ctaUrl || '#')}" target="_blank" style="display:block;padding:10px 16px;font-family:${font};font-size:13px;font-weight:600;color:${p.ctaTextColor || '#ffffff'};text-decoration:none;text-align:center;">${escHtml(item.ctaText)}</a></td></tr></table>` : ''}
+            </td>
+          </tr>
+        </table>
+      </div>
+      <!--[if mso]></td>${!isLast ? '<td style="width:16px;"></td>' : ''}<![endif]-->`;
+  }).join('');
+  return `
+    <tr>
+      <td style="padding:${p.padding || '20px 40px'};background-color:${p.backgroundColor || '#ffffff'};">
+        ${p.title ? `<p style="margin:0 0 16px 0;font-family:${font};font-size:${p.titleSize || '20px'};font-weight:700;color:${p.titleColor || '#0f172a'};text-align:${p.titleAlign || 'left'};">${escHtml(p.title)}</p>` : ''}
+        <!--[if mso]><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><![endif]-->
+        ${itemsHtml}
+        <!--[if mso]></tr></table><![endif]-->
+      </td>
+    </tr>`;
+}
+
+function renderMenuBlock(block, settings) {
+  const p = block.properties;
+  const font = fontStack(settings.fontFamily);
+  const links = p.links || [];
+  const linksHtml = links.map(l => `
+    <td align="center" style="padding:0 ${p.itemSpacing || '12px'};">
+      <a href="${escHtml(l.url || '#')}" target="_blank" style="font-family:${font};font-size:${p.fontSize || '14px'};font-weight:${p.fontWeight || '600'};color:${p.linkColor || '#1a56db'};text-decoration:none;">${escHtml(l.label || 'Link')}</a>
+    </td>`).join('');
+  return `
+    <tr>
+      <td align="${p.alignment || 'center'}" style="padding:${p.padding || '12px 40px'};background-color:${p.backgroundColor || '#ffffff'};border-bottom:${p.borderBottom || '1px solid #e5e7eb'};">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 auto;">
+          <tr>${linksHtml}</tr>
+        </table>
+      </td>
+    </tr>`;
+}
+
+function renderHtmlBlock(block) {
+  const p = block.properties;
+  return `
+    <tr>
+      <td style="padding:${p.padding || '0'};background-color:${p.backgroundColor || '#ffffff'};">
+        ${p.html || '<!-- Custom HTML block -->'}
+      </td>
+    </tr>`;
+}
+
 // ─── Block router ─────────────────────────────────────────────
 function renderBlock(block, settings) {
   switch (block.type) {
@@ -284,6 +410,11 @@ function renderBlock(block, settings) {
     case 'columns': return renderColumnsBlock(block, settings);
     case 'social': return renderSocialBlock(block, settings);
     case 'footer': return renderFooterBlock(block, settings);
+    case 'video': return renderVideoBlock(block, settings);
+    case 'testimonial': return renderTestimonialBlock(block, settings);
+    case 'products': return renderProductsBlock(block, settings);
+    case 'menu': return renderMenuBlock(block, settings);
+    case 'html': return renderHtmlBlock(block);
     default: return '';
   }
 }
@@ -461,6 +592,85 @@ export const BLOCK_DEFAULTS = {
     backgroundColor: '#ffffff',
     padding: '20px 40px',
   },
+  video: {
+    url: '',
+    thumbnailUrl: '',
+    altText: 'Watch Video',
+    buttonLabel: 'Watch Video',
+    buttonColor: '#dc2626',
+    caption: '',
+    width: 560,
+    borderRadius: '8px',
+    alignment: 'center',
+    backgroundColor: '#ffffff',
+    padding: '20px 40px',
+  },
+  testimonial: {
+    quote: 'This product completely transformed how our team works. Highly recommend to anyone!',
+    name: 'Jane Smith',
+    title: 'CEO',
+    company: 'Acme Corp',
+    avatarUrl: '',
+    avatarSize: 44,
+    rating: 5,
+    showStars: true,
+    starColor: '#f59e0b',
+    quoteSize: '17px',
+    quoteColor: '#1e293b',
+    nameColor: '#0f172a',
+    titleColor: '#64748b',
+    backgroundColor: '#f8fafc',
+    cardBg: '#ffffff',
+    borderColor: '#e2e8f0',
+    borderRadius: '12px',
+    innerPadding: '28px',
+    padding: '20px 40px',
+  },
+  products: {
+    title: 'Featured Products',
+    titleSize: '20px',
+    titleColor: '#0f172a',
+    titleAlign: 'left',
+    columns: 2,
+    items: [
+      { name: 'Product One', description: 'Short product description goes here.', price: '$29.99', originalPrice: '', imageUrl: 'https://placehold.co/260x180/e2e8f0/64748b?text=Product', badge: 'NEW', ctaText: 'Buy Now', ctaUrl: '#' },
+      { name: 'Product Two', description: 'Short product description goes here.', price: '$49.99', originalPrice: '$69.99', imageUrl: 'https://placehold.co/260x180/e2e8f0/64748b?text=Product', badge: 'SALE', ctaText: 'Buy Now', ctaUrl: '#' },
+    ],
+    cardBg: '#ffffff',
+    borderColor: '#e2e8f0',
+    borderRadius: '8px',
+    cardPadding: '16px',
+    ctaColor: '#1a56db',
+    ctaTextColor: '#ffffff',
+    nameColor: '#0f172a',
+    descColor: '#64748b',
+    priceColor: '#0f172a',
+    badgeColor: '#3b82f6',
+    badgeBg: '#eff6ff',
+    backgroundColor: '#ffffff',
+    padding: '20px 40px',
+  },
+  menu: {
+    links: [
+      { label: 'Home', url: '#' },
+      { label: 'About', url: '#' },
+      { label: 'Products', url: '#' },
+      { label: 'Contact', url: '#' },
+    ],
+    linkColor: '#1a56db',
+    fontSize: '14px',
+    fontWeight: '600',
+    itemSpacing: '12px',
+    alignment: 'center',
+    backgroundColor: '#ffffff',
+    borderBottom: '1px solid #e5e7eb',
+    padding: '14px 40px',
+  },
+  html: {
+    html: '<p style="color:#333;font-family:Arial,sans-serif;font-size:14px;">Custom HTML content here.</p>',
+    backgroundColor: '#ffffff',
+    padding: '0',
+  },
   footer: {
     companyName: 'Your Company',
     companyNameColor: '#666666',
@@ -562,6 +772,47 @@ export const STARTER_TEMPLATES = [
       { type: 'divider', properties: { ...BLOCK_DEFAULTS.divider } },
       { type: 'text', properties: { ...BLOCK_DEFAULTS.text, content: '<table style="width:100%;font-size:14px;"><tr><td style="padding:8px 0;color:#6b7280;">Subtotal</td><td style="padding:8px 0;text-align:right;">$XX.XX</td></tr><tr><td style="padding:8px 0;color:#6b7280;">Shipping</td><td style="padding:8px 0;text-align:right;">FREE</td></tr><tr style="border-top:2px solid #e5e7eb;"><td style="padding:12px 0;font-weight:700;">Total</td><td style="padding:12px 0;text-align:right;font-weight:700;">$XX.XX</td></tr></table>' } },
       { type: 'button', properties: { ...BLOCK_DEFAULTS.button, text: 'Track Your Order', backgroundColor: '#1e293b' } },
+      { type: 'footer', properties: { ...BLOCK_DEFAULTS.footer } },
+    ],
+  },
+  {
+    name: 'Product Showcase',
+    description: 'Showcase products with CTAs',
+    icon: '🛍️',
+    settings: { backgroundColor: '#f4f4f4', contentBackgroundColor: '#ffffff', fontFamily: 'Arial', contentWidth: 600, preheader: 'Check out our latest products' },
+    blocks: [
+      { type: 'header', properties: { ...BLOCK_DEFAULTS.header, backgroundColor: '#0f172a', companyName: '{{company_name}}' } },
+      { type: 'hero', properties: { ...BLOCK_DEFAULTS.hero, heading: 'Our Latest Products', subheading: 'Handpicked just for you, {{firstName}}', backgroundColor: '#0f172a', textColor: '#ffffff', buttonText: 'Shop All', buttonColor: '#3b82f6' } },
+      { type: 'products', properties: { ...BLOCK_DEFAULTS.products } },
+      { type: 'divider', properties: { ...BLOCK_DEFAULTS.divider } },
+      { type: 'social', properties: { ...BLOCK_DEFAULTS.social } },
+      { type: 'footer', properties: { ...BLOCK_DEFAULTS.footer } },
+    ],
+  },
+  {
+    name: 'Event Invite',
+    description: 'Invite contacts to an event',
+    icon: '🎫',
+    settings: { backgroundColor: '#1e1b4b', contentBackgroundColor: '#1e1b4b', fontFamily: 'Arial', contentWidth: 600, preheader: "You're invited!" },
+    blocks: [
+      { type: 'header', properties: { ...BLOCK_DEFAULTS.header, backgroundColor: '#312e81', companyName: '{{company_name}}' } },
+      { type: 'hero', properties: { ...BLOCK_DEFAULTS.hero, heading: "You're Invited! 🎉", subheading: '{{event_name}} – {{event_date}}', backgroundColor: '#312e81', textColor: '#ffffff', buttonText: 'RSVP Now', buttonColor: '#7c3aed' } },
+      { type: 'text', properties: { ...BLOCK_DEFAULTS.text, backgroundColor: '#1e1b4b', color: '#e2e8f0', content: '<p>Hi {{firstName}},</p><p>We are thrilled to invite you to <strong>{{event_name}}</strong>. Join us for an unforgettable experience.</p><p>📅 <strong>Date:</strong> {{event_date}}<br>📍 <strong>Location:</strong> {{event_location}}</p>' } },
+      { type: 'button', properties: { ...BLOCK_DEFAULTS.button, text: 'Reserve Your Spot', backgroundColor: '#7c3aed', containerBg: '#1e1b4b' } },
+      { type: 'footer', properties: { ...BLOCK_DEFAULTS.footer, backgroundColor: '#312e81', textColor: '#a5b4fc' } },
+    ],
+  },
+  {
+    name: 'Testimonial Focus',
+    description: 'Social proof campaign',
+    icon: '⭐',
+    settings: { backgroundColor: '#f8fafc', contentBackgroundColor: '#ffffff', fontFamily: 'Arial', contentWidth: 600, preheader: 'See what our customers say' },
+    blocks: [
+      { type: 'header', properties: { ...BLOCK_DEFAULTS.header } },
+      { type: 'text', properties: { ...BLOCK_DEFAULTS.text, content: '<h2 style="font-size:24px;font-weight:800;color:#0f172a;margin:0 0 8px 0;">What Our Customers Say</h2><p>Join thousands of happy customers who love our product.</p>' } },
+      { type: 'testimonial', properties: { ...BLOCK_DEFAULTS.testimonial } },
+      { type: 'testimonial', properties: { ...BLOCK_DEFAULTS.testimonial, name: 'Bob Johnson', title: 'Product Manager', company: 'Startup Inc', quote: 'The best tool we have used in years. Our productivity doubled overnight!' } },
+      { type: 'button', properties: { ...BLOCK_DEFAULTS.button, text: 'Start Your Free Trial', backgroundColor: '#059669' } },
       { type: 'footer', properties: { ...BLOCK_DEFAULTS.footer } },
     ],
   },

@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Server } from 'lucide-react';
-import Card from '../components/common/Card';
+import { Plus, Server, Mail, Pencil, Trash2, Zap, CheckCircle } from 'lucide-react';
 import Button from '../components/common/Button';
 import Input from '../components/common/Input';
 import Modal from '../components/common/Modal';
@@ -80,93 +79,84 @@ const SMTPSettings = () => {
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-gray-900">SMTP Settings</h1>
-        <Button
-          icon={<Plus className="w-4 h-4" />}
-          onClick={() => {
-            setSelectedConfig(null);
-            setShowModal(true);
-          }}
+        <div>
+          <h1 className="page-title">SMTP Settings</h1>
+          <p className="page-subtitle">Manage your outgoing mail server configurations</p>
+        </div>
+        <button
+          onClick={() => { setSelectedConfig(null); setShowModal(true); }}
+          className="btn-primary flex items-center gap-2"
         >
-          Add Configuration
-        </Button>
+          <Plus className="w-4 h-4" /> Add Config
+        </button>
       </div>
 
       {smtpConfigs.length === 0 ? (
-        <Card>
-          <div className="text-center py-12">
-            <Server className="w-16 h-16 mx-auto text-gray-400 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
-              No SMTP Configurations
-            </h3>
-            <p className="text-gray-600 mb-6">
-              Add your first SMTP configuration to start sending emails
-            </p>
-            <Button onClick={() => setShowModal(true)}>
-              Add Configuration
-            </Button>
+        <div className="card text-center py-16">
+          <div className="icon-box-lg bg-indigo-50 mx-auto mb-4">
+            <Server className="w-7 h-7 text-indigo-400" />
           </div>
-        </Card>
+          <h3 className="text-base font-semibold text-gray-800 mb-1">No SMTP Configurations</h3>
+          <p className="text-sm text-gray-500 mb-6">Add your first SMTP server to start sending emails</p>
+          <button onClick={() => setShowModal(true)} className="btn-primary">
+            <Plus className="w-4 h-4" /> Add Configuration
+          </button>
+        </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {smtpConfigs.map((config) => (
-            <Card key={config.id}>
-              <div className="space-y-4">
-                <div className="flex items-start justify-between">
+            <div key={config.id} className="card hover:shadow-card-hover transition-shadow duration-200">
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="icon-box bg-indigo-50">
+                    <Mail className="w-5 h-5 text-indigo-500" />
+                  </div>
                   <div>
-                    <h3 className="text-lg font-semibold">{config.name}</h3>
-                    <p className="text-sm text-gray-600">{config.host}:{config.port}</p>
-                  </div>
-                  {config.isDefault && (
-                    <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
-                      Default
-                    </span>
-                  )}
-                </div>
-                
-                <div className="text-sm space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">From:</span>
-                    <span className="font-medium">{config.fromEmail}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Username:</span>
-                    <span className="font-medium">{config.username}</span>
+                    <h3 className="text-sm font-semibold text-gray-900">{config.name}</h3>
+                    <p className="text-xs text-gray-400">{config.host}:{config.port}</p>
                   </div>
                 </div>
+                {config.isDefault && (
+                  <span className="badge badge-sent">
+                    <CheckCircle className="w-3 h-3" /> Default
+                  </span>
+                )}
+              </div>
 
-                <div className="flex items-center space-x-2 pt-4 border-t">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => {
-                      setTestConfig(config);
-                      setShowTestModal(true);
-                    }}
-                  >
-                    Test
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => {
-                      setSelectedConfig(config);
-                      setShowModal(true);
-                    }}
-                  >
-                    Edit
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="danger"
-                    onClick={() => handleDelete(config.id)}
-                  >
-                    Delete
-                  </Button>
+              <div className="space-y-1.5 text-xs text-gray-500 border-t border-surface-100 pt-4 mb-4">
+                <div className="flex justify-between">
+                  <span>From</span>
+                  <span className="font-medium text-gray-700">{config.fromEmail}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Username</span>
+                  <span className="font-medium text-gray-700">{config.username}</span>
                 </div>
               </div>
-            </Card>
+
+              <div className="flex items-center gap-2">
+                <button
+                  className="flex-1 text-xs font-medium py-2 px-3 rounded-lg border border-surface-200 text-gray-600 hover:bg-surface-50 transition-colors flex items-center justify-center gap-1.5"
+                  onClick={() => { setTestConfig(config); setShowTestModal(true); }}
+                >
+                  <Zap className="w-3.5 h-3.5" /> Test
+                </button>
+                <button
+                  className="flex-1 text-xs font-medium py-2 px-3 rounded-lg border border-surface-200 text-gray-600 hover:bg-surface-50 transition-colors flex items-center justify-center gap-1.5"
+                  onClick={() => { setSelectedConfig(config); setShowModal(true); }}
+                >
+                  <Pencil className="w-3.5 h-3.5" /> Edit
+                </button>
+                <button
+                  className="flex-1 text-xs font-medium py-2 px-3 rounded-lg border border-rose-100 text-rose-500 hover:bg-rose-50 transition-colors flex items-center justify-center gap-1.5"
+                  onClick={() => handleDelete(config.id)}
+                >
+                  <Trash2 className="w-3.5 h-3.5" /> Delete
+                </button>
+              </div>
+            </div>
           ))}
         </div>
       )}

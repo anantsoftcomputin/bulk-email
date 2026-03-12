@@ -16,7 +16,8 @@ const STEPS = [
   { id: 4, name: 'Review', icon: Eye },
 ];
 
-const CampaignWizard = ({ isOpen, onClose }) => {
+const CampaignWizard = ({ isOpen, onClose, campaign = null }) => {
+  const isEditMode = !!campaign;
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
     name: '',
@@ -45,8 +46,35 @@ const CampaignWizard = ({ isOpen, onClose }) => {
       initializeContacts();
       initializeGroups();
       initializeTemplates();
+      if (!campaign) {
+        resetForm();
+      }
     }
   }, [isOpen]);
+
+  // Pre-populate form when editing an existing campaign
+  useEffect(() => {
+    if (campaign && isOpen) {
+      setCurrentStep(1);
+      setFormData({
+        name: campaign.name || '',
+        subject: campaign.subject || '',
+        previewText: campaign.previewText || '',
+        templateId: campaign.templateId || null,
+        recipientType: 'contacts',
+        selectedContacts: [],
+        selectedGroups: [],
+        scheduleType: campaign.scheduledFor ? 'scheduled' : 'immediate',
+        scheduledDate: campaign.scheduledFor ? campaign.scheduledFor.split('T')[0] : '',
+        scheduledTime: campaign.scheduledFor ? campaign.scheduledFor.split('T')[1]?.slice(0, 5) : '',
+      });
+      // Load existing recipients
+      dbHelpers.getCampaignRecipients(campaign.id).then((recipients) => {
+        const contactIds = recipients.map(r => r.contactId).filter(Boolean);
+        setFormData(prev => ({ ...prev, selectedContacts: contactIds }));
+      });
+    }
+  }, [campaign, isOpen]);
 
   useEffect(() => {
     if (formData.templateId) {
@@ -125,46 +153,14 @@ const CampaignWizard = ({ isOpen, onClose }) => {
         campaignStatus = 'scheduled';
       }
 
-      console.log('Creating campaign with data:', {
-        name: formData.name,
-        subject: formData.subject,
-        templateId: formData.templateId,
-        recipientType: formData.recipientType,
-        selectedContacts: formData.selectedContacts,
-        selectedGroups: formData.selectedGroups,
-      });
-
-      const result = await addCampaign({
-        name: formData.name,
-        subject: formData.subject,
-        previewText: formData.previewText,
-        templateId: formData.templateId,
-        status: campaignStatus,
-        scheduledFor,
-        totalRecipients: recipientCount,
-        stats: {
-          total: recipientCount,
-          sent: 0,
-          delivered: 0,
-          opened: 0,
-          clicked: 0,
-          bounced: 0,
-          failed: 0,
-        },
-      });
-
-      // Handle both cases: if result is an object with id, or just the id
-      const campaignId = typeof result === 'object' ? result.id : result;
-      console.log('Campaign created with ID:', campaignId);
-
+      // Build recipients list
       let recipients = [];
       if (formData.recipientType === 'contacts') {
         recipients = formData.selectedContacts.map(contactId => {
           const contact = contacts.find(c => c.id === contactId);
           return {
-            campaignId,
             contactId,
-            email: contact.email,
+            email: contact?.email || '',
             status: 'pending',
             createdAt: new Date().toISOString(),
           };
@@ -173,7 +169,6 @@ const CampaignWizard = ({ isOpen, onClose }) => {
         for (const groupId of formData.selectedGroups) {
           const groupContacts = await dbHelpers.getGroupContacts(groupId);
           const groupRecipients = groupContacts.map(contact => ({
-            campaignId,
             contactId: contact.id,
             email: contact.email,
             status: 'pending',
@@ -183,27 +178,68 @@ const CampaignWizard = ({ isOpen, onClose }) => {
         }
       }
 
-      console.log('Recipients to add:', recipients);
+      if (isEditMode) {
+        // ── Edit mode: update the existing campaign ──────────────────────
+        await updateCampaign(campaign.id, {
+          name: formData.name,
+          subject: formData.subject,
+          previewText: formData.previewText,
+          templateId: formData.templateId,
+          status: campaignStatus,
+          scheduledFor,
+          totalRecipients: recipients.length,
+        });
 
-      for (const recipient of recipients) {
-        const recipientId = await dbHelpers.addCampaignRecipient(recipient);
-        console.log('Added recipient with ID:', recipientId);
-      }
+        // Replace old recipients with the new selection
+        await db.campaignRecipients.where('campaignId').equals(campaign.id).delete();
+        for (const recip of recipients) {
+          await dbHelpers.addCampaignRecipient({ ...recip, campaignId: campaign.id });
+        }
 
-      await updateCampaign(campaignId, { totalRecipients: recipients.length });
-      await initializeCampaigns();
-      
-      if (formData.scheduleType === 'scheduled') {
-        toast.success(`Campaign scheduled for ${new Date(scheduledFor).toLocaleString()}`);
+        await initializeCampaigns();
+        toast.success('Campaign updated successfully!');
       } else {
-        toast.success('Campaign created successfully!');
+        // ── Create mode: add a new campaign ──────────────────────────────
+        const result = await addCampaign({
+          name: formData.name,
+          subject: formData.subject,
+          previewText: formData.previewText,
+          templateId: formData.templateId,
+          status: campaignStatus,
+          scheduledFor,
+          totalRecipients: recipients.length,
+          stats: {
+            total: recipients.length,
+            sent: 0,
+            delivered: 0,
+            opened: 0,
+            clicked: 0,
+            bounced: 0,
+            failed: 0,
+          },
+        });
+
+        const campaignId = typeof result === 'object' ? result.id : result;
+
+        for (const recip of recipients) {
+          await dbHelpers.addCampaignRecipient({ ...recip, campaignId });
+        }
+
+        await updateCampaign(campaignId, { totalRecipients: recipients.length });
+        await initializeCampaigns();
+
+        if (formData.scheduleType === 'scheduled') {
+          toast.success(`Campaign scheduled for ${new Date(scheduledFor).toLocaleString()}`);
+        } else {
+          toast.success('Campaign created successfully!');
+        }
       }
-      
+
       onClose();
       resetForm();
     } catch (error) {
-      console.error('Error creating campaign:', error);
-      toast.error(`Failed to create campaign: ${error.message}`);
+      console.error('Error saving campaign:', error);
+      toast.error(`Failed to save campaign: ${error.message}`);
     }
   };
 
@@ -299,7 +335,7 @@ const CampaignWizard = ({ isOpen, onClose }) => {
         onClose();
         resetForm();
       }}
-      title="Create Campaign"
+      title={isEditMode ? 'Edit Campaign' : 'Create Campaign'}
       size="fullscreen"
     >
       <div className="h-[calc(100vh-180px)] flex flex-col">
@@ -312,10 +348,10 @@ const CampaignWizard = ({ isOpen, onClose }) => {
                   <div
                     className={`w-12 h-12 rounded-full flex items-center justify-center ${
                       currentStep > step.id
-                        ? 'bg-green-500 text-white'
+                        ? 'bg-emerald-500 text-white'
                         : currentStep === step.id
-                        ? 'bg-purple-600 text-white'
-                        : 'bg-gray-200 text-gray-500'
+                        ? 'bg-primary-600 text-white'
+                        : 'bg-surface-200 text-gray-500'
                     }`}
                   >
                     {currentStep > step.id ? (
@@ -358,36 +394,43 @@ const CampaignWizard = ({ isOpen, onClose }) => {
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   placeholder="e.g., Q1 Newsletter Campaign"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-surface-200 rounded-xl input-field"
                 />
+                <p className="text-xs text-gray-500 mt-1">
+                  Internal name to identify this campaign — not visible to recipients.
+                </p>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Email Subject Line *
+                  Subject Line *
                 </label>
                 <input
                   type="text"
                   value={formData.subject}
                   onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                  placeholder="Your compelling subject line"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  placeholder="e.g., Your exclusive offer is waiting ✉️"
+                  className="w-full px-4 py-3 border border-surface-200 rounded-xl input-field"
                 />
+                <p className="text-xs text-gray-500 mt-1">
+                  The subject recipients will see in their inbox. Keep it under 60 characters.
+                </p>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Preview Text (Optional)
+                  Preview Text
+                  <span className="ml-1 text-gray-400 font-normal">(optional)</span>
                 </label>
                 <input
                   type="text"
                   value={formData.previewText}
                   onChange={(e) => setFormData({ ...formData, previewText: e.target.value })}
-                  placeholder="Text shown in inbox preview"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  placeholder="e.g., Open to see what's inside..."
+                  className="w-full px-4 py-3 border border-surface-200 rounded-xl input-field"
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  This appears below the subject line in most email clients
+                  Short snippet shown below the subject line in most email clients.
                 </p>
               </div>
             </div>
@@ -414,14 +457,14 @@ const CampaignWizard = ({ isOpen, onClose }) => {
                       onClick={() => setFormData({ ...formData, templateId: template.id })}
                       className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
                         formData.templateId === template.id
-                          ? 'border-purple-600 bg-purple-50'
-                          : 'border-gray-200 hover:border-purple-300'
+                        ? 'border-primary-600 bg-primary-50'
+                          : 'border-surface-200 hover:border-primary-300'
                       }`}
                     >
                       <div className="flex items-start justify-between mb-2">
                         <h4 className="font-semibold text-gray-900">{template.name}</h4>
                         {formData.templateId === template.id && (
-                          <Check className="text-purple-600" size={20} />
+                          <Check className="text-primary-600" size={20} />
                         )}
                       </div>
                       <p className="text-sm text-gray-600">{template.subject}</p>
@@ -435,14 +478,14 @@ const CampaignWizard = ({ isOpen, onClose }) => {
           {/* Step 3: Choose Recipients */}
           {currentStep === 3 && (
             <div className="space-y-6">
-              <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-6 border border-purple-200">
+              <div className="bg-primary-50 rounded-xl p-6 border border-primary-100">
                 <div className="flex items-center justify-between mb-4">
                   <div>
                     <h3 className="text-xl font-bold text-gray-900">Choose Recipients</h3>
                     <p className="text-gray-600 mt-1">Select contacts or groups to send this campaign to</p>
                   </div>
                   <div className="text-right">
-                    <div className="text-3xl font-bold text-purple-600">{recipientCount}</div>
+                    <div className="text-3xl font-bold text-primary-600">{recipientCount}</div>
                     <div className="text-sm text-gray-600">Total Recipients</div>
                   </div>
                 </div>
@@ -455,8 +498,8 @@ const CampaignWizard = ({ isOpen, onClose }) => {
                     }}
                     className={`flex-1 px-6 py-4 rounded-lg font-semibold transition-all flex items-center justify-center space-x-2 ${
                       formData.recipientType === 'contacts'
-                        ? 'bg-gradient-to-r from-purple-600 to-purple-700 text-white shadow-lg transform scale-105'
-                        : 'bg-white text-gray-700 hover:bg-gray-50 border-2 border-gray-200'
+                        ? 'bg-primary-600 text-white shadow-md'
+                        : 'bg-white text-gray-700 hover:bg-surface-50 border-2 border-surface-200'
                     }`}
                   >
                     <Users size={20} />
@@ -469,8 +512,8 @@ const CampaignWizard = ({ isOpen, onClose }) => {
                     }}
                     className={`flex-1 px-6 py-4 rounded-lg font-semibold transition-all flex items-center justify-center space-x-2 ${
                       formData.recipientType === 'groups'
-                        ? 'bg-gradient-to-r from-purple-600 to-purple-700 text-white shadow-lg transform scale-105'
-                        : 'bg-white text-gray-700 hover:bg-gray-50 border-2 border-gray-200'
+                        ? 'bg-primary-600 text-white shadow-md'
+                        : 'bg-white text-gray-700 hover:bg-surface-50 border-2 border-surface-200'
                     }`}
                   >
                     <Users size={20} />
@@ -489,9 +532,8 @@ const CampaignWizard = ({ isOpen, onClose }) => {
                           placeholder="Search contacts by name, email, or company..."
                           value={searchQuery}
                           onChange={(e) => setSearchQuery(e.target.value)}
-                          className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                          className="w-full pl-10 pr-4 py-3 border border-surface-200 rounded-xl input-field"
                         />
-                        <Mail className="absolute left-3 top-3.5 text-gray-400" size={18} />
                       </div>
                     </div>
                     <div className="flex items-center space-x-3">
@@ -542,8 +584,8 @@ const CampaignWizard = ({ isOpen, onClose }) => {
                                 onClick={() => toggleContactSelection(contact.id)}
                                 className={`cursor-pointer transition-colors ${
                                   formData.selectedContacts.includes(contact.id)
-                                    ? 'bg-purple-50 hover:bg-purple-100'
-                                    : 'hover:bg-gray-50'
+                                    ? 'bg-primary-50 hover:bg-primary-100'
+                                    : 'hover:bg-surface-50'
                                 }`}
                               >
                                 <td className="px-4 py-3">
@@ -551,7 +593,7 @@ const CampaignWizard = ({ isOpen, onClose }) => {
                                     type="checkbox"
                                     checked={formData.selectedContacts.includes(contact.id)}
                                     onChange={() => {}}
-                                    className="rounded border-gray-300 text-purple-600 focus:ring-purple-500 w-4 h-4"
+                                    className="rounded border-surface-200 text-primary-600 focus:ring-primary-500 w-4 h-4"
                                   />
                                 </td>
                                 <td className="px-4 py-3">
@@ -585,7 +627,7 @@ const CampaignWizard = ({ isOpen, onClose }) => {
                           placeholder="Search groups by name..."
                           value={searchQuery}
                           onChange={(e) => setSearchQuery(e.target.value)}
-                          className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                          className="w-full pl-10 pr-4 py-3 border border-surface-200 rounded-xl input-field"
                         />
                         <Users className="absolute left-3 top-3.5 text-gray-400" size={18} />
                       </div>
@@ -628,21 +670,21 @@ const CampaignWizard = ({ isOpen, onClose }) => {
                               key={group.id}
                               className={`flex items-center p-5 cursor-pointer transition-colors ${
                                 formData.selectedGroups.includes(group.id)
-                                  ? 'bg-purple-50 hover:bg-purple-100'
-                                  : 'hover:bg-gray-50'
+                                  ? 'bg-primary-50 hover:bg-primary-100'
+                                  : 'hover:bg-surface-50'
                               }`}
                             >
                               <input
                                 type="checkbox"
                                 checked={formData.selectedGroups.includes(group.id)}
                                 onChange={() => toggleGroupSelection(group.id)}
-                                className="rounded border-gray-300 text-purple-600 focus:ring-purple-500 w-4 h-4"
+                                className="rounded border-gray-300 text-primary-600 focus:ring-primary-500 w-4 h-4"
                               />
                               <div className="ml-4 flex-1">
                                 <div className="flex items-center justify-between">
                                   <p className="font-semibold text-gray-900 text-lg">{group.name}</p>
                                   <div className="flex items-center space-x-2">
-                                    <div className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-medium">
+                                    <div className="px-3 py-1 bg-primary-100 text-primary-700 rounded-full text-sm font-medium">
                                       {group.contactCount || 0} contacts
                                     </div>
                                   </div>
@@ -704,7 +746,7 @@ const CampaignWizard = ({ isOpen, onClose }) => {
                           value="immediate"
                           checked={formData.scheduleType === 'immediate'}
                           onChange={(e) => setFormData({ ...formData, scheduleType: e.target.value })}
-                          className="mr-2 text-purple-600 focus:ring-purple-500"
+                          className="mr-2 text-primary-600 focus:ring-primary-500"
                         />
                         <span className="font-medium text-gray-900">Send Immediately</span>
                       </label>
@@ -716,7 +758,7 @@ const CampaignWizard = ({ isOpen, onClose }) => {
                           value="scheduled"
                           checked={formData.scheduleType === 'scheduled'}
                           onChange={(e) => setFormData({ ...formData, scheduleType: e.target.value })}
-                          className="mr-2 text-purple-600 focus:ring-purple-500"
+                          className="mr-2 text-primary-600 focus:ring-primary-500"
                         />
                         <span className="font-medium text-gray-900">Schedule for Later</span>
                       </label>
@@ -733,25 +775,13 @@ const CampaignWizard = ({ isOpen, onClose }) => {
                             value={formData.scheduledDate}
                             onChange={(e) => setFormData({ ...formData, scheduledDate: e.target.value })}
                             min={new Date().toISOString().split('T')[0]}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Time *
-                          </label>
-                          <input
-                            type="time"
-                            value={formData.scheduledTime}
-                            onChange={(e) => setFormData({ ...formData, scheduledTime: e.target.value })}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                            className="w-full px-4 py-2 border border-surface-200 rounded-xl input-field"
                           />
                         </div>
 
                         {formData.scheduledDate && formData.scheduledTime && (
-                          <div className="bg-purple-50 border border-purple-200 rounded-lg p-3">
-                            <p className="text-sm text-purple-900">
+                          <div className="bg-primary-50 border border-primary-200 rounded-xl p-3">
+                            <p className="text-sm text-primary-900">
                               📅 Campaign will be sent on{' '}
                               <span className="font-semibold">
                                 {new Date(`${formData.scheduledDate}T${formData.scheduledTime}`).toLocaleString()}
@@ -822,8 +852,8 @@ const CampaignWizard = ({ isOpen, onClose }) => {
                 Next
               </Button>
             ) : (
-              <Button onClick={handleSubmit} className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">
-                Create Campaign
+              <Button onClick={handleSubmit} className="btn-primary">
+                {isEditMode ? 'Save Changes' : 'Create Campaign'}
               </Button>
             )}
           </div>

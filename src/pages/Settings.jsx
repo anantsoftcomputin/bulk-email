@@ -89,7 +89,7 @@ const Settings = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent"></div>
+        <div className="w-10 h-10 border-2 border-primary-200 border-t-primary-600 rounded-full animate-spin" />
       </div>
     );
   }
@@ -98,8 +98,8 @@ const Settings = () => {
     <div className="space-y-8 animate-fade-in">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-4xl font-bold text-gray-900 tracking-tight">Settings</h1>
-          <p className="text-gray-600 mt-2 font-medium">Manage your account and application preferences</p>
+          <h1 className="page-title">Settings</h1>
+          <p className="page-subtitle">Manage your account and application preferences</p>
         </div>
         <Button
           icon={<Save size={20} />}
@@ -112,12 +112,12 @@ const Settings = () => {
       </div>
 
       {/* Account Settings */}
-      <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center">
-            <User className="w-5 h-5 text-white" />
+      <div className="card">
+        <div className="flex items-center gap-3 mb-5">
+          <div className="icon-box bg-indigo-50">
+            <User className="w-5 h-5 text-indigo-500" />
           </div>
-          <h2 className="text-xl font-bold text-gray-900">Account Settings</h2>
+          <h2 className="text-sm font-semibold text-gray-900">Account Settings</h2>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Input
@@ -137,12 +137,12 @@ const Settings = () => {
       </div>
 
       {/* Company Information */}
-      <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center">
-            <Building className="w-5 h-5 text-white" />
+      <div className="card">
+        <div className="flex items-center gap-3 mb-5">
+          <div className="icon-box bg-emerald-50">
+            <Building className="w-5 h-5 text-emerald-500" />
           </div>
-          <h2 className="text-xl font-bold text-gray-900">Company Information</h2>
+          <h2 className="text-sm font-semibold text-gray-900">Company Information</h2>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Input
@@ -161,54 +161,44 @@ const Settings = () => {
       </div>
 
       {/* Notification Settings */}
-      <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center">
-            <Bell className="w-5 h-5 text-white" />
+      <div className="card">
+        <div className="flex items-center gap-3 mb-5">
+          <div className="icon-box bg-violet-50">
+            <Bell className="w-5 h-5 text-violet-500" />
           </div>
-          <h2 className="text-xl font-bold text-gray-900">Notification Settings</h2>
+          <h2 className="text-sm font-semibold text-gray-900">Notification Settings</h2>
         </div>
-        <div className="space-y-6">
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+        <div className="space-y-4">
+          <div className="flex items-center justify-between p-4 bg-surface-50 rounded-xl">
             <div>
-              <h3 className="font-bold text-gray-900">Email Notifications</h3>
-              <p className="text-sm text-gray-600 mt-1">Receive email notifications for important events</p>
+              <h3 className="text-sm font-semibold text-gray-900">Email Notifications</h3>
+              <p className="text-xs text-gray-500 mt-0.5">Receive email notifications for important events</p>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                checked={settings.emailNotifications}
-                onChange={(e) => handleChange('emailNotifications', e.target.checked)}
-                className="sr-only peer"
-              />
-              <div className="w-14 h-7 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-blue-600 peer-checked:to-indigo-600"></div>
+              <input type="checkbox" checked={settings.emailNotifications} onChange={(e) => handleChange('emailNotifications', e.target.checked)} className="sr-only peer" />
+              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
             </label>
           </div>
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+          <div className="flex items-center justify-between p-4 bg-surface-50 rounded-xl">
             <div>
-              <h3 className="font-bold text-gray-900">Campaign Notifications</h3>
-              <p className="text-sm text-gray-600 mt-1">Get notified when campaigns complete</p>
+              <h3 className="text-sm font-semibold text-gray-900">Campaign Notifications</h3>
+              <p className="text-xs text-gray-500 mt-0.5">Get notified when campaigns complete</p>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                checked={settings.campaignNotifications}
-                onChange={(e) => handleChange('campaignNotifications', e.target.checked)}
-                className="sr-only peer"
-              />
-              <div className="w-14 h-7 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-blue-600 peer-checked:to-indigo-600"></div>
+              <input type="checkbox" checked={settings.campaignNotifications} onChange={(e) => handleChange('campaignNotifications', e.target.checked)} className="sr-only peer" />
+              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
             </label>
           </div>
         </div>
       </div>
 
       {/* Email Queue Settings */}
-      <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl flex items-center justify-center">
-            <Mail className="w-5 h-5 text-white" />
+      <div className="card">
+        <div className="flex items-center gap-3 mb-5">
+          <div className="icon-box bg-amber-50">
+            <Mail className="w-5 h-5 text-amber-500" />
           </div>
-          <h2 className="text-xl font-bold text-gray-900">Email Queue Settings</h2>
+          <h2 className="text-sm font-semibold text-gray-900">Email Queue Settings</h2>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Input
@@ -242,32 +232,32 @@ const Settings = () => {
       </div>
 
       {/* Database Management */}
-      <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-xl flex items-center justify-center">
-            <Database className="w-5 h-5 text-white" />
+      <div className="card">
+        <div className="flex items-center gap-3 mb-5">
+          <div className="icon-box bg-teal-50">
+            <Database className="w-5 h-5 text-teal-500" />
           </div>
-          <h2 className="text-xl font-bold text-gray-900">Database Management</h2>
+          <h2 className="text-sm font-semibold text-gray-900">Database Management</h2>
         </div>
         
         {/* Database Statistics */}
         {dbStats && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-100">
-              <div className="text-3xl font-bold text-blue-600 mb-1">{dbStats.contacts}</div>
-              <div className="text-sm font-bold text-gray-600 uppercase tracking-wide">Contacts</div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+            <div className="rounded-xl p-4 bg-indigo-50">
+              <p className="text-2xl font-semibold text-indigo-600 tabular-nums">{dbStats.contacts}</p>
+              <p className="text-xs text-gray-500 mt-0.5">Contacts</p>
             </div>
-            <div className="bg-gradient-to-br from-emerald-50 to-teal-50 p-6 rounded-xl border border-emerald-100">
-              <div className="text-3xl font-bold text-emerald-600 mb-1">{dbStats.groups}</div>
-              <div className="text-sm font-bold text-gray-600 uppercase tracking-wide">Groups</div>
+            <div className="rounded-xl p-4 bg-emerald-50">
+              <p className="text-2xl font-semibold text-emerald-600 tabular-nums">{dbStats.groups}</p>
+              <p className="text-xs text-gray-500 mt-0.5">Groups</p>
             </div>
-            <div className="bg-gradient-to-br from-purple-50 to-pink-50 p-6 rounded-xl border border-purple-100">
-              <div className="text-3xl font-bold text-purple-600 mb-1">{dbStats.templates}</div>
-              <div className="text-sm font-bold text-gray-600 uppercase tracking-wide">Templates</div>
+            <div className="rounded-xl p-4 bg-violet-50">
+              <p className="text-2xl font-semibold text-violet-600 tabular-nums">{dbStats.templates}</p>
+              <p className="text-xs text-gray-500 mt-0.5">Templates</p>
             </div>
-            <div className="bg-gradient-to-br from-amber-50 to-orange-50 p-6 rounded-xl border border-amber-100">
-              <div className="text-3xl font-bold text-amber-600 mb-1">{dbStats.campaigns}</div>
-              <div className="text-sm font-bold text-gray-600 uppercase tracking-wide">Campaigns</div>
+            <div className="rounded-xl p-4 bg-amber-50">
+              <p className="text-2xl font-semibold text-amber-600 tabular-nums">{dbStats.campaigns}</p>
+              <p className="text-xs text-gray-500 mt-0.5">Campaigns</p>
             </div>
           </div>
         )}

@@ -70,6 +70,32 @@ export const useTemplateStore = create((set, get) => ({
     }
   },
 
+  // Duplicate template
+  duplicateTemplate: async (id) => {
+    set({ isLoading: true, error: null });
+    try {
+      const original = await dbHelpers.getTemplateById(id);
+      if (!original) throw new Error('Template not found');
+      const { id: _id, createdAt, updatedAt, ...rest } = original;
+      const newTemplate = {
+        ...rest,
+        name: `${original.name} (Copy)`,
+        status: 'draft',
+      };
+      const newId = await dbHelpers.createTemplate(newTemplate);
+      const created = await dbHelpers.getTemplateById(newId);
+      set((state) => ({
+        templates: [created, ...state.templates],
+        isLoading: false,
+      }));
+      return created;
+    } catch (error) {
+      console.error('Error duplicating template:', error);
+      set({ isLoading: false, error: error.message });
+      throw error;
+    }
+  },
+
   // Set selected template
   setSelectedTemplate: (template) => set({ selectedTemplate: template }),
 
