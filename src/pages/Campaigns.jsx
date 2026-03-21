@@ -10,6 +10,7 @@ import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 import emailQueueService from '../services/emailQueue';
 import { db, dbHelpers } from '../db/database';
+import { renderEmailHTML } from '../utils/emailHtmlRenderer';
 
 const StatusBadge = ({ status }) => {
   const map = {
@@ -85,9 +86,21 @@ const Campaigns = () => {
             await initializeCampaigns();
             return;
           }
+          // Re-render the HTML from builder blocks so the email always matches
+          // the visual design. Fall back to stored htmlContent for raw-HTML templates.
+          let emailHtml;
+          if (template.builderData?.blocks?.length > 0) {
+            emailHtml = renderEmailHTML({
+              settings: template.builderData.settings || {},
+              blocks: template.builderData.blocks || [],
+            });
+          } else {
+            emailHtml = template.htmlContent || template.body || '';
+          }
+
           const queuedCount = await emailQueueService.addCampaignToQueue(
             campaignId, contacts,
-            { subject: campaign.subject, body: template.htmlContent || template.body || '' }
+            { subject: campaign.subject, body: emailHtml }
           );
           await updateCampaign(campaignId, {
             stats: { ...campaign.stats, sent: (campaign.stats?.sent || 0) + queuedCount, total: queuedCount },

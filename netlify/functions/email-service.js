@@ -183,18 +183,33 @@ class EmailService {
     if (/^<!doctype/i.test(trimmed) || /^<html/i.test(trimmed)) {
       return trimmed;
     }
+    // Wrap raw HTML snippets in a proper email document with inline styles so
+    // email clients (Gmail, Outlook) that strip <style> blocks still render
+    // basic backgrounds and typography correctly.
     return [
       '<!DOCTYPE html>',
-      '<html lang="en">',
+      '<html lang="en" xmlns="http://www.w3.org/1999/xhtml">',
       '<head>',
       '<meta charset="utf-8">',
       '<meta name="viewport" content="width=device-width,initial-scale=1">',
       '<meta http-equiv="X-UA-Compatible" content="IE=edge">',
+      '<style>',
+      'html,body{margin:0!important;padding:0!important;}',
+      'table,td{mso-table-lspace:0pt!important;mso-table-rspace:0pt!important;border-collapse:collapse!important;}',
+      'img{border:0;height:auto;line-height:100%;outline:none;text-decoration:none;}',
+      'a{text-decoration:none;}',
+      '</style>',
       '</head>',
-      '<body style="margin:0;padding:0;font-family:Arial,Helvetica,sans-serif;background-color:#f4f4f4;">',
-      '<div style="max-width:600px;margin:0 auto;background-color:#ffffff;padding:20px;">',
+      '<body style="margin:0;padding:0;background-color:#f4f4f4;font-family:Arial,Helvetica,sans-serif;">',
+      '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">',
+      '<tr><td align="center" style="padding:20px 10px;">',
+      '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="max-width:600px;background-color:#ffffff;">',
+      '<tr><td style="padding:20px;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.6;color:#333333;">',
       trimmed,
-      '</div>',
+      '</td></tr>',
+      '</table>',
+      '</td></tr>',
+      '</table>',
       '</body>',
       '</html>',
     ].join('\n');

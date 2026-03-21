@@ -44,9 +44,15 @@ const TemplateThumbnail = React.memo(function TemplateThumbnail({ template }) {
   const iframeRef = useRef(null);
   const [loaded, setLoaded] = useState(false);
   const html = useMemo(() => {
-    try { return renderEmailHTML({ blocks: template.blocks || [], subject: template.subject }); }
+    try {
+      return renderEmailHTML({
+        settings: template.builderData?.settings || {},
+        blocks: template.builderData?.blocks || template.blocks || [],
+        subject: template.subject,
+      });
+    }
     catch { return '<p style="font-family:sans-serif;padding:16px;color:#888;">Preview unavailable</p>'; }
-  }, [template.blocks, template.subject]);
+  }, [template.builderData, template.blocks, template.subject]);
 
   useEffect(() => {
     const iframe = iframeRef.current;
@@ -79,9 +85,15 @@ const PreviewModal = React.memo(function PreviewModal({ template, onClose, onEdi
   const [viewMode, setViewMode] = useState('desktop');
 
   const html = useMemo(() => {
-    try { return renderEmailHTML({ blocks: template.blocks || [], subject: template.subject }); }
+    try {
+      return renderEmailHTML({
+        settings: template.builderData?.settings || {},
+        blocks: template.builderData?.blocks || template.blocks || [],
+        subject: template.subject,
+      });
+    }
     catch { return '<p style="font-family:sans-serif;padding:24px;color:#888;">Could not render.</p>'; }
-  }, [template.blocks, template.subject]);
+  }, [template.builderData, template.blocks, template.subject]);
 
   useEffect(() => {
     const iframe = iframeRef.current;

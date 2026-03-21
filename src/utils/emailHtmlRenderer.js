@@ -477,7 +477,7 @@ export function renderEmailHTML(data) {
   </style>
 </head>
 <body style="margin:0;padding:0;word-spacing:normal;background-color:${bgColor};-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;">
-  <div role="article" aria-roledescription="email" aria-label="${escHtml(settings.title || 'Email')}" lang="en" style="font-size:medium;font-size:max(16px,1rem);">
+    <div role="article" aria-roledescription="email" aria-label="${escHtml(settings.title || 'Email')}" lang="en">
     <!-- Visually Hidden Preheader Text -->
     ${settings.preheader ? `<div style="display:none;font-size:1px;color:${bgColor};line-height:1px;max-height:0px;max-width:0px;opacity:0;overflow:hidden;">${escHtml(settings.preheader)}&zwnj;&nbsp;</div>` : ''}
 
