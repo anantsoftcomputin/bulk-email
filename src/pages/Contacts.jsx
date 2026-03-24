@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Upload, Download, Search, Users, Trash2, Edit2, UserCheck, X } from 'lucide-react';
+import { Plus, Upload, Download, Users, Trash2, Edit2, UserCheck } from 'lucide-react';
 import Modal from '../components/common/Modal';
 import ContactForm from '../components/contacts/ContactForm';
 import ContactImport from '../components/contacts/ContactImport';
+import ContactFilter from '../components/contacts/ContactFilter';
 import { useContactStore } from '../store/contactStore.db';
 import { useGroupStore } from '../store/groupStore';
 import { exportToCSV } from '../utils/exportHelpers';
@@ -42,21 +43,26 @@ const Contacts = () => {
   }, []);
 
   const filteredContacts = contacts.filter(contact => {
-    if (!filters.search) return true;
-    const s = filters.search.toLowerCase();
-    return (
-      contact.email?.toLowerCase().includes(s) ||
-      contact.firstName?.toLowerCase().includes(s) ||
-      contact.lastName?.toLowerCase().includes(s) ||
-      contact.company?.toLowerCase().includes(s)
-    );
+    if (filters.search) {
+      const s = filters.search.toLowerCase();
+      const matches =
+        contact.email?.toLowerCase().includes(s) ||
+        contact.firstName?.toLowerCase().includes(s) ||
+        contact.lastName?.toLowerCase().includes(s) ||
+        contact.company?.toLowerCase().includes(s);
+      if (!matches) return false;
+    }
+    if (filters.status && contact.status !== filters.status) return false;
+    if (filters.dateFrom && contact.createdAt < filters.dateFrom) return false;
+    if (filters.dateTo && contact.createdAt > filters.dateTo + 'T23:59:59') return false;
+    return true;
   });
 
   const totalPages = Math.ceil(filteredContacts.length / PAGE_SIZE);
   const pagedContacts = filteredContacts.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  // Reset to page 1 when search changes
-  useEffect(() => { setPage(1); }, [filters.search]);
+  // Reset to page 1 when filters change
+  useEffect(() => { setPage(1); }, [filters.search, filters.status, filters.dateFrom, filters.dateTo]);
 
   const handleSelectAll = () => {
     if (selectAll) { setSelectedContacts([]); setSelectAll(false); }
@@ -145,22 +151,10 @@ const Contacts = () => {
         </div>
       </div>
 
-      {/* Search */}
+      {/* Search & Filter */}
       <div className="card">
-        <div className="relative mb-5">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Search by name, email, or company…"
-            value={filters.search || ''}
-            onChange={(e) => setFilters({ search: e.target.value })}
-            className="input-field pl-10"
-          />
-          {filters.search && (
-            <button onClick={() => setFilters({ search: '' })} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-              <X size={15} />
-            </button>
-          )}
+        <div className="mb-5">
+          <ContactFilter filters={filters} onChange={setFilters} />
         </div>
 
         {/* Table */}
@@ -191,7 +185,7 @@ const Contacts = () => {
                   <td colSpan={8} className="text-center py-14">
                     <Users className="w-10 h-10 text-gray-200 mx-auto mb-2" />
                     <p className="text-sm text-gray-400">
-                      {filters.search ? `No contacts matching "${filters.search}"` : 'No contacts yet. Add your first contact!'}
+                      {(filters.search || filters.status || filters.dateFrom || filters.dateTo) ? 'No contacts match the current filters.' : 'No contacts yet. Add your first contact!'}
                     </p>
                   </td>
                 </tr>

@@ -51,6 +51,7 @@ const EmailQueue = () => {
       setQueueItems(enhancedItems);
     } catch (error) {
       console.error('Error loading queue data:', error);
+      toast.error('Failed to load queue data');
     }
   };
 

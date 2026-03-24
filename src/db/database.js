@@ -522,7 +522,7 @@ export const dbHelpers = {
       const snap = await getDocs(userCol('smtpConfigs'));
       const configs = docsToArray(snap);
       const defaultConfig = configs.find(c => c.isDefault === true) || configs[0];
-      console.log('Found SMTP config:', defaultConfig?.name || 'None');
+      // Default SMTP config retrieved
       return defaultConfig || null;
     } catch (error) {
       console.error('Error getting default SMTP config:', error);
@@ -787,7 +787,7 @@ export async function initializeSampleData() {
     }
 
     await dbHelpers.setSetting('dataInitialized', true);
-    console.log('✅ Sample data initialized in Firestore for user', uid());
+    // Sample data initialized in Firestore for current user
   } catch (error) {
     console.error('Error initializing sample data:', error);
   }

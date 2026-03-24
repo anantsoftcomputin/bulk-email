@@ -16,6 +16,7 @@ import { useAuthStore } from '../store/authStore';
 import { db, dbHelpers } from '../db/database';
 import { format, subDays, startOfDay, endOfDay, isWithinInterval, parseISO } from 'date-fns';
 import CampaignWizard from '../components/campaigns/CampaignWizard';
+import toast from 'react-hot-toast';
 
 // ── Soft chart colors ────────────────────────────────────
 const SOFT_COLORS = {
@@ -59,7 +60,7 @@ const Dashboard = () => {
         setQueueStats(qs);
         try { const events = await db.trackingEvents.toArray(); setTrackingEvents(events); }
         catch { setTrackingEvents([]); }
-      } catch (e) { console.error('Dashboard load error:', e); }
+      } catch (e) { console.error('Dashboard load error:', e); toast.error('Failed to load dashboard data'); }
       finally { setIsLoading(false); }
     };
     load();

@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { ArrowRight, ArrowLeft, Check, Mail, Users, FileText, Eye } from 'lucide-react';
 import Button from '../common/Button';
 import Modal from '../common/Modal';
+import CampaignScheduler from './CampaignScheduler';
+import CampaignPreview from './CampaignPreview';
 import { useCampaignStore } from '../../store/campaignStore.db';
 import { useContactStore } from '../../store/contactStore.db';
 import { useGroupStore } from '../../store/groupStore';
@@ -40,6 +42,7 @@ const CampaignWizard = ({ isOpen, onClose, campaign = null }) => {
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [recipientCount, setRecipientCount] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -765,30 +768,24 @@ const CampaignWizard = ({ isOpen, onClose, campaign = null }) => {
                     </div>
 
                     {formData.scheduleType === 'scheduled' && (
-                      <div className="bg-white border border-gray-200 rounded-lg p-4 space-y-4">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Date *
-                          </label>
-                          <input
-                            type="date"
-                            value={formData.scheduledDate}
-                            onChange={(e) => setFormData({ ...formData, scheduledDate: e.target.value })}
-                            min={new Date().toISOString().split('T')[0]}
-                            className="w-full px-4 py-2 border border-surface-200 rounded-xl input-field"
-                          />
-                        </div>
-
-                        {formData.scheduledDate && formData.scheduledTime && (
-                          <div className="bg-primary-50 border border-primary-200 rounded-xl p-3">
-                            <p className="text-sm text-primary-900">
-                              📅 Campaign will be sent on{' '}
-                              <span className="font-semibold">
-                                {new Date(`${formData.scheduledDate}T${formData.scheduledTime}`).toLocaleString()}
-                              </span>
-                            </p>
-                          </div>
-                        )}
+                      <div className="bg-white border border-gray-200 rounded-lg p-4">
+                        <CampaignScheduler
+                          value={formData.scheduledDate && formData.scheduledTime
+                            ? `${formData.scheduledDate}T${formData.scheduledTime}:00`
+                            : ''}
+                          onChange={(iso) => {
+                            if (iso) {
+                              setFormData(f => ({
+                                ...f,
+                                scheduledDate: iso.slice(0, 10),
+                                scheduledTime: iso.slice(11, 16),
+                              }));
+                            } else {
+                              setFormData(f => ({ ...f, scheduledDate: '', scheduledTime: '' }));
+                            }
+                          }}
+                          minDate={new Date().toISOString()}
+                        />
                       </div>
                     )}
                   </div>
@@ -805,7 +802,17 @@ const CampaignWizard = ({ isOpen, onClose, campaign = null }) => {
               </div>
 
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Email Preview</h3>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900">Email Preview</h3>
+                  {selectedTemplate && (
+                    <button
+                      onClick={() => setShowPreviewModal(true)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-primary-700 bg-primary-50 border border-primary-200 rounded-lg hover:bg-primary-100 transition-colors"
+                    >
+                      <Eye size={13} /> Preview Email
+                    </button>
+                  )}
+                </div>
                 
                 <div className="border-2 border-gray-200 rounded-lg overflow-hidden">
                   <div className="bg-gray-50 p-4 border-b border-gray-200">
@@ -859,6 +866,14 @@ const CampaignWizard = ({ isOpen, onClose, campaign = null }) => {
           </div>
         </div>
       </div>
+      {/* Campaign Preview Modal */}
+      {showPreviewModal && (
+        <CampaignPreview
+          campaign={{ name: formData.name, subject: formData.subject, previewText: formData.previewText }}
+          template={selectedTemplate}
+          onClose={() => setShowPreviewModal(false)}
+        />
+      )}
     </Modal>
   );
 };

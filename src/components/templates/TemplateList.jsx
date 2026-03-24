@@ -2,8 +2,7 @@ import React, { useState } from 'react';
 import { Plus, Edit, Trash2, Copy, Eye } from 'lucide-react';
 import { Button } from '../common/Button';
 import { Modal } from '../common/Modal';
-import { TemplateEditor } from './TemplateEditor';
-import { useTemplateStore } from '../../store/templateStore';
+import { useTemplateStore } from '../../store/templateStore.db';
 
 export const TemplateList = () => {
   const { templates, addTemplate, updateTemplate, deleteTemplate } = useTemplateStore();

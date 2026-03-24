@@ -16,7 +16,6 @@ export async function clearDemoData() {
     // Reset the initialization flag
     await dbHelpers.setSetting('dataInitialized', false);
     
-    console.log('✅ Demo data cleared successfully');
     return true;
   } catch (error) {
     console.error('Error clearing demo data:', error);

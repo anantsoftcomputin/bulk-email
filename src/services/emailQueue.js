@@ -50,8 +50,6 @@ class EmailQueueService {
    */
   async addCampaignToQueue(campaignId, contacts, template, priority = 5) {
     try {
-      console.log('addCampaignToQueue called with:', { campaignId, contactCount: contacts.length, template, priority });
-      
       const queueItems = contacts.map(contact => ({
         campaignId,
         contactId: contact.id,
@@ -62,14 +60,10 @@ class EmailQueueService {
         scheduledAt: new Date().toISOString(),
       }));
 
-      console.log('Queue items to add:', queueItems);
-
       for (const item of queueItems) {
-        const id = await dbHelpers.addToEmailQueue(item);
-        console.log('Added queue item with ID:', id);
+        await dbHelpers.addToEmailQueue(item);
       }
 
-      console.log(`Added ${queueItems.length} emails to queue for campaign ${campaignId}`);
       return queueItems.length;
     } catch (error) {
       console.error('Error adding to email queue:', error);
@@ -107,12 +101,10 @@ class EmailQueueService {
    */
   async startProcessing() {
     if (this.isProcessing) {
-      console.log('Email queue is already processing');
       return;
     }
 
     this.isProcessing = true;
-    console.log('Started email queue processing');
 
     // Reset rate limit counter every interval
     setInterval(() => {
@@ -134,7 +126,6 @@ class EmailQueueService {
       this.processingInterval = null;
     }
     this.isProcessing = false;
-    console.log('Stopped email queue processing');
   }
 
   /**
@@ -151,7 +142,6 @@ class EmailQueueService {
       const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
       for (const item of stuckItems) {
         if (new Date(item.createdAt) < fiveMinutesAgo) {
-          console.log('Resetting stuck processing item:', item.email);
           await dbHelpers.updateEmailQueueStatus(item.id, 'pending', 'Reset from stuck processing state');
         }
       }
@@ -162,7 +152,6 @@ class EmailQueueService {
 
       // Check rate limit
       if (this.emailsSentInInterval >= this.maxEmailsPerInterval) {
-        console.log('Rate limit reached, waiting...');
         return;
       }
 
@@ -177,8 +166,6 @@ class EmailQueueService {
       // Update total count
       const allPending = await dbHelpers.getEmailQueuePending(1000);
       this.totalEmails = allPending.length;
-
-      console.log(`📧 Processing ${pendingEmails.length} emails from queue (${this.totalEmails} remaining)`);
 
       // Process emails in parallel (3 at a time)
       const concurrency = 3;
@@ -197,7 +184,6 @@ class EmailQueueService {
   async sendEmail(queueItem) {
     try {
       this.currentEmail = queueItem.email;
-      console.log('Sending email to:', queueItem.email);
       
       // Emit progress
       this.emitProgress({
@@ -219,15 +205,12 @@ class EmailQueueService {
         throw new Error('No default SMTP configuration found');
       }
 
-      console.log('Using SMTP config:', smtpConfig.name);
-
       // Inject tracking pixel and link tracking into the email body
       let trackedBody = queueItem.body;
       if (queueItem.campaignId && queueItem.contactId) {
         try {
           const currentUserId = auth.currentUser?.uid || '';
           trackedBody = applyTracking(queueItem.body, queueItem.campaignId, queueItem.contactId, currentUserId);
-          console.log('Tracking injected for:', queueItem.email, 'userId:', currentUserId);
         } catch (trackingErr) {
           console.warn('Failed to inject tracking, sending without tracking:', trackingErr.message);
         }
@@ -247,7 +230,6 @@ class EmailQueueService {
           throw new Error(result.error || 'Failed to send email');
         }
         emailSent = true;
-        console.log('Email sent via backend API');
       } catch (apiError) {
         // If backend is not available, fall back to simulation
         console.warn('Backend API not available, simulating email send:', apiError.message);
@@ -275,7 +257,6 @@ class EmailQueueService {
 
       this.emailsSentInInterval++;
       this.sentEmails++;
-      console.log(`✓ Email sent successfully to ${queueItem.email}`);
       
       // Emit success progress
       this.emitProgress({
@@ -304,11 +285,9 @@ class EmailQueueService {
       
       if (queueItem.retryCount < maxRetries) {
         // Mark for retry
-        console.log(`Retrying email (attempt ${queueItem.retryCount + 1}/${maxRetries})`);
         await dbHelpers.updateEmailQueueStatus(queueItem.id, 'pending', error.message);
       } else {
         // Mark as failed
-        console.log(`Email failed after ${maxRetries} attempts`);
         await dbHelpers.updateEmailQueueStatus(queueItem.id, 'failed', error.message);
       }
     }
@@ -333,8 +312,6 @@ class EmailQueueService {
       );
       
       if (allComplete) {
-        console.log(`✅ All emails sent for campaign ${campaignId}, updating status to 'sent'`);
-        
         // Get campaign and update status
         const campaign = await dbHelpers.getCampaignById(campaignId);
         if (campaign && campaign.status === 'sending') {
@@ -342,7 +319,6 @@ class EmailQueueService {
             status: 'sent',
             sentAt: new Date().toISOString(),
           });
-          console.log(`Campaign ${campaignId} marked as sent`);
         }
       }
     } catch (error) {

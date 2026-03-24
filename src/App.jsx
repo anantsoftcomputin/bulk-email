@@ -10,6 +10,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import LandingPage from './pages/LandingPage';
 import DashboardLayout from './components/layout/DashboardLayout';
+import ErrorBoundary from './components/common/ErrorBoundary';
 import Dashboard from './pages/Dashboard';
 import Contacts from './pages/Contacts';
 import Groups from './pages/Groups';
@@ -85,7 +86,9 @@ function App() {
                     </div>
                   </div>
                 ) : (
-                  <DashboardLayout />
+                  <ErrorBoundary>
+                    <DashboardLayout />
+                  </ErrorBoundary>
                 )}
               </AuthGuard>
             }

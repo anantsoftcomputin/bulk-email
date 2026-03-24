@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Server, Mail, Pencil, Trash2, Zap, CheckCircle } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import Button from '../components/common/Button';
 import Input from '../components/common/Input';
 import Modal from '../components/common/Modal';
 import SMTPTestModal from '../components/smtp/SMTPTestModal';
+import SMTPList from '../components/smtp/SMTPList';
+import SMTPStats from '../components/smtp/SMTPStats';
 import { useSMTPStore } from '../store/smtpStore';
 import toast from 'react-hot-toast';
 
@@ -96,7 +98,7 @@ const SMTPSettings = () => {
       {smtpConfigs.length === 0 ? (
         <div className="card text-center py-16">
           <div className="icon-box-lg bg-indigo-50 mx-auto mb-4">
-            <Server className="w-7 h-7 text-indigo-400" />
+            <Plus className="w-7 h-7 text-indigo-400" />
           </div>
           <h3 className="text-base font-semibold text-gray-800 mb-1">No SMTP Configurations</h3>
           <p className="text-sm text-gray-500 mb-6">Add your first SMTP server to start sending emails</p>
@@ -105,59 +107,19 @@ const SMTPSettings = () => {
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          {smtpConfigs.map((config) => (
-            <div key={config.id} className="card hover:shadow-card-hover transition-shadow duration-200">
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div className="icon-box bg-indigo-50">
-                    <Mail className="w-5 h-5 text-indigo-500" />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-semibold text-gray-900">{config.name}</h3>
-                    <p className="text-xs text-gray-400">{config.host}:{config.port}</p>
-                  </div>
-                </div>
-                {config.isDefault && (
-                  <span className="badge badge-sent">
-                    <CheckCircle className="w-3 h-3" /> Default
-                  </span>
-                )}
-              </div>
-
-              <div className="space-y-1.5 text-xs text-gray-500 border-t border-surface-100 pt-4 mb-4">
-                <div className="flex justify-between">
-                  <span>From</span>
-                  <span className="font-medium text-gray-700">{config.fromEmail}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Username</span>
-                  <span className="font-medium text-gray-700">{config.username}</span>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  className="flex-1 text-xs font-medium py-2 px-3 rounded-lg border border-surface-200 text-gray-600 hover:bg-surface-50 transition-colors flex items-center justify-center gap-1.5"
-                  onClick={() => { setTestConfig(config); setShowTestModal(true); }}
-                >
-                  <Zap className="w-3.5 h-3.5" /> Test
-                </button>
-                <button
-                  className="flex-1 text-xs font-medium py-2 px-3 rounded-lg border border-surface-200 text-gray-600 hover:bg-surface-50 transition-colors flex items-center justify-center gap-1.5"
-                  onClick={() => { setSelectedConfig(config); setShowModal(true); }}
-                >
-                  <Pencil className="w-3.5 h-3.5" /> Edit
-                </button>
-                <button
-                  className="flex-1 text-xs font-medium py-2 px-3 rounded-lg border border-rose-100 text-rose-500 hover:bg-rose-50 transition-colors flex items-center justify-center gap-1.5"
-                  onClick={() => handleDelete(config.id)}
-                >
-                  <Trash2 className="w-3.5 h-3.5" /> Delete
-                </button>
-              </div>
-            </div>
-          ))}
+        <div className="space-y-6">
+          <SMTPStats stats={{
+            sent: smtpConfigs.reduce((s, c) => s + (c.stats?.sent || 0), 0),
+            failed: smtpConfigs.reduce((s, c) => s + (c.stats?.failed || 0), 0),
+            bounced: smtpConfigs.reduce((s, c) => s + (c.stats?.bounced || 0), 0),
+            avgDeliveryTime: null,
+          }} />
+          <SMTPList
+            configs={smtpConfigs}
+            onEdit={(config) => { setSelectedConfig(config); setShowModal(true); }}
+            onDelete={handleDelete}
+            onTest={(config) => { setTestConfig(config); setShowTestModal(true); }}
+          />
         </div>
       )}
 

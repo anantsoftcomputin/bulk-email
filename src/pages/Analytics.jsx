@@ -7,6 +7,9 @@ import { useCampaignStore } from '../store/campaignStore.db';
 import { useContactStore } from '../store/contactStore.db';
 import { useTemplateStore } from '../store/templateStore.db';
 import { db, dbHelpers } from '../db/database';
+import DeliveryChart from '../components/analytics/DeliveryChart';
+import EngagementMetrics from '../components/analytics/EngagementMetrics';
+import EmailStats from '../components/analytics/EmailStats';
 import {
   TrendingUp, TrendingDown, Mail, Eye, MousePointer, AlertCircle, BarChart3,
   Users, Send, Calendar, RefreshCw, ArrowUpRight, ArrowDownRight, Clock, Activity,
@@ -56,6 +59,7 @@ const Analytics = () => {
         }
       } catch (error) {
         console.error('Error loading analytics:', error);
+        toast.error('Failed to load analytics data');
       } finally {
         setIsLoading(false);
       }
@@ -382,60 +386,16 @@ const Analytics = () => {
         </div>
 
         {/* Campaign Performance Bar Chart */}
-        <div className="card">
-          <div className="mb-5">
-            <h2 className="text-sm font-semibold text-gray-900">Campaign Performance</h2>
-            <p className="text-xs text-gray-500 mt-0.5">Top {campaignChartData.length} campaigns by volume</p>
-          </div>
-          {campaignChartData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={280}>
-              <BarChart data={campaignChartData} barCategoryGap="20%">
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-                <XAxis dataKey="name" tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-                <Tooltip contentStyle={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '10px', fontSize: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }} />
-                <Legend wrapperStyle={{ fontSize: '12px' }} />
-                <Bar dataKey="sent" fill="#6366f1" name="Sent" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="opened" fill="#10b981" name="Opened" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="clicked" fill="#8b5cf6" name="Clicked" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="flex items-center justify-center h-[280px] text-gray-400">
-              <div className="text-center">
-                <BarChart3 className="w-10 h-10 mx-auto mb-2 opacity-50" />
-                <p className="text-sm">No campaigns with sent data yet</p>
-              </div>
-            </div>
-          )}
-        </div>
+        <DeliveryChart campaigns={campaigns} dateRange={dateRange} />
       </div>
+
+      {/* ─── Engagement Metrics ───────────────────────── */}
+      <EngagementMetrics campaigns={campaigns} trackingEvents={trackingEvents} dateRange={dateRange} />
 
       {/* ─── Charts Row 2 ────────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Email Status Pie */}
-        <div className="card">
-          <h2 className="text-sm font-semibold text-gray-900 mb-5">Email Status</h2>
-          <ResponsiveContainer width="100%" height={240}>
-            <PieChart>
-              <Pie
-                data={statusDistribution}
-                cx="50%"
-                cy="50%"
-                innerRadius={50}
-                outerRadius={90}
-                paddingAngle={3}
-                dataKey="value"
-              >
-                {statusDistribution.map((entry, i) => (
-                  <Cell key={i} fill={entry.color} />
-                ))}
-              </Pie>
-              <Tooltip formatter={(value, name) => [value.toLocaleString(), name]} contentStyle={{ borderRadius: '12px', border: '1px solid #e5e7eb' }} />
-              <Legend />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
+        <EmailStats stats={{ sent: stats.totalSent, delivered: stats.totalDelivered, opened: stats.totalOpened, clicked: stats.totalClicked, bounced: stats.totalBounced, failed: stats.totalFailed }} />
 
         {/* Campaign Status Pie */}
         <div className="card">

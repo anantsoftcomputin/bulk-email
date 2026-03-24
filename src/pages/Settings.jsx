@@ -33,6 +33,7 @@ const Settings = () => {
       setDbStats(stats);
     } catch (error) {
       console.error('Error loading database stats:', error);
+      // Non-critical: stats panel will show empty values
     }
   };
 

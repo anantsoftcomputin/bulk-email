@@ -7,6 +7,7 @@ import {
   RefreshCw, FolderOpen, Globe
 } from 'lucide-react';
 import EmailBuilder from '../components/templates/EmailBuilder';
+import VariableManager from '../components/templates/VariableManager';
 import { useTemplateStore } from '../store/templateStore.db';
 import { renderEmailHTML } from '../utils/emailHtmlRenderer';
 import { format, formatDistanceToNow } from 'date-fns';
@@ -414,6 +415,13 @@ const Templates = () => {
               <p className="text-xs text-gray-500 mt-0.5">{stat.label}</p>
             </div>
           ); })}
+        </div>
+      )}
+
+      {/* Variables Reference */}
+      {templates.length > 0 && (
+        <div className="card p-4">
+          <VariableManager onInsert={(v) => { navigator.clipboard?.writeText(v); }} />
         </div>
       )}
 
