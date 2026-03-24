@@ -42,10 +42,10 @@ function getCategoryMeta(id) {
 
 /* ── Scale-preview thumbnail ── */
 const TemplateThumbnail = React.memo(function TemplateThumbnail({ template }) {
-  const iframeRef = useRef(null);
   const [loaded, setLoaded] = useState(false);
   const html = useMemo(() => {
     try {
+      if (template.htmlContent) return template.htmlContent;
       return renderEmailHTML({
         settings: template.builderData?.settings || {},
         blocks: template.builderData?.blocks || template.blocks || [],
@@ -53,21 +53,19 @@ const TemplateThumbnail = React.memo(function TemplateThumbnail({ template }) {
       });
     }
     catch { return '<p style="font-family:sans-serif;padding:16px;color:#888;">Preview unavailable</p>'; }
-  }, [template.builderData, template.blocks, template.subject]);
-
-  useEffect(() => {
-    const iframe = iframeRef.current;
-    if (!iframe) return;
-    const doc = iframe.contentDocument || iframe.contentWindow?.document;
-    if (!doc) return;
-    doc.open(); doc.write(html); doc.close();
-    setLoaded(true);
-  }, [html]);
+  }, [template.htmlContent, template.builderData, template.blocks, template.subject]);
 
   return (
     <div className="relative w-full overflow-hidden bg-gray-50" style={{ height: 170 }}>
       <div className="absolute inset-0" style={{ transform: 'scale(0.35)', transformOrigin: 'top left', width: '286%', height: '286%', pointerEvents: 'none' }}>
-        <iframe ref={iframeRef} title="preview" sandbox="allow-same-origin" className="w-full h-full border-0" style={{ minHeight: 480 }} />
+        <iframe
+          title="preview"
+          srcDoc={html}
+          sandbox="allow-scripts"
+          className="w-full h-full border-0"
+          style={{ minHeight: 480 }}
+          onLoad={() => setLoaded(true)}
+        />
       </div>
       {!loaded && (
         <div className="absolute inset-0 flex items-center justify-center">
@@ -80,13 +78,13 @@ const TemplateThumbnail = React.memo(function TemplateThumbnail({ template }) {
 
 /* ── Full Preview Modal ── */
 const PreviewModal = React.memo(function PreviewModal({ template, onClose, onEdit }) {
-  const iframeRef = useRef(null);
   const meta = getCategoryMeta(template.category);
   const CatIcon = meta.Icon;
   const [viewMode, setViewMode] = useState('desktop');
 
   const html = useMemo(() => {
     try {
+      if (template.htmlContent) return template.htmlContent;
       return renderEmailHTML({
         settings: template.builderData?.settings || {},
         blocks: template.builderData?.blocks || template.blocks || [],
@@ -94,15 +92,7 @@ const PreviewModal = React.memo(function PreviewModal({ template, onClose, onEdi
       });
     }
     catch { return '<p style="font-family:sans-serif;padding:24px;color:#888;">Could not render.</p>'; }
-  }, [template.builderData, template.blocks, template.subject]);
-
-  useEffect(() => {
-    const iframe = iframeRef.current;
-    if (!iframe) return;
-    const doc = iframe.contentDocument || iframe.contentWindow?.document;
-    if (!doc) return;
-    doc.open(); doc.write(html); doc.close();
-  }, [html, viewMode]);
+  }, [template.htmlContent, template.builderData, template.blocks, template.subject]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-stretch bg-black/60 backdrop-blur-sm" onClick={onClose}>
@@ -134,7 +124,7 @@ const PreviewModal = React.memo(function PreviewModal({ template, onClose, onEdi
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-gray-200 text-gray-600 ml-auto"><Clock size={11} /> {formatDistanceToNow(new Date(template.updatedAt || template.createdAt))} ago</span>
           </div>
           <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200 transition-all duration-300" style={{ width: viewMode === 'mobile' ? 375 : 620, maxWidth: '100%' }}>
-            <iframe ref={iframeRef} title="full-preview" sandbox="allow-same-origin" className="w-full block border-0" style={{ height: '70vh' }} />
+            <iframe title="full-preview" srcDoc={html} sandbox="allow-scripts" className="w-full block border-0" style={{ height: '70vh' }} />
           </div>
           {(template.variables || []).length > 0 && (
             <div className="w-full max-w-2xl bg-white rounded-xl border border-gray-200 p-4">
@@ -284,7 +274,7 @@ const SortDropdown = React.memo(function SortDropdown({ value, onChange }) {
 
 /* ── Main Page ── */
 const Templates = () => {
-  const { templates, initializeTemplates, deleteTemplate, addTemplate, updateTemplate, duplicateTemplate } = useTemplateStore();
+  const { templates, initializeTemplates, deleteTemplate, addTemplate, updateTemplate, duplicateTemplate, loadStarterTemplates } = useTemplateStore();
 
   const [showEditor, setShowEditor]             = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
@@ -358,6 +348,13 @@ const Templates = () => {
     URL.revokeObjectURL(url); toast.success(`Exported ${templates.length} templates`);
   }, [templates]);
 
+  const handleLoadStarters = useCallback(async () => {
+    try {
+      await loadStarterTemplates();
+      toast.success('15 starter templates loaded!');
+    } catch { toast.error('Failed to load starter templates'); }
+  }, [loadStarterTemplates]);
+
   const importRef = useRef(null);
   const handleImportFile = useCallback(async e => {
     const file = e.target.files?.[0]; if (!file) return;
@@ -389,6 +386,9 @@ const Templates = () => {
         </div>
         <div className="flex items-center gap-2">
           <input ref={importRef} type="file" accept=".json" className="hidden" onChange={handleImportFile} />
+          <button onClick={handleLoadStarters} className="flex items-center gap-1.5 px-3.5 py-2 border border-indigo-200 rounded-xl text-sm font-semibold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 transition-colors">
+            <Sparkles size={14} /> Load Starters
+          </button>
           <button onClick={() => importRef.current?.click()} className="flex items-center gap-1.5 px-3.5 py-2 border border-gray-200 rounded-xl text-sm font-semibold text-gray-600 bg-white hover:bg-gray-50 transition-colors">
             <Upload size={14} /> Import
           </button>

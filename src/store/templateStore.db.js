@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { dbHelpers } from '../db/database';
+import { sampleTemplates } from '../utils/sampleData';
 
 export const useTemplateStore = create((set, get) => ({
   templates: [],
@@ -12,10 +13,44 @@ export const useTemplateStore = create((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const templates = await dbHelpers.getAllTemplates();
+      if (templates.length === 0) {
+        // Seed starter templates once (guard with a setting so deliberate clears aren't re-seeded)
+        const alreadySeeded = await dbHelpers.getSetting('starterTemplatesSeeded');
+        if (!alreadySeeded) {
+          const now = new Date().toISOString();
+          for (const t of sampleTemplates) {
+            const { id: _id, ...rest } = t;
+            await dbHelpers.createTemplate({ ...rest, createdAt: now, updatedAt: now });
+          }
+          await dbHelpers.setSetting('starterTemplatesSeeded', true);
+          const seeded = await dbHelpers.getAllTemplates();
+          set({ templates: seeded, isLoading: false });
+          return;
+        }
+      }
       set({ templates, isLoading: false });
     } catch (error) {
       console.error('Error loading templates:', error);
       set({ isLoading: false, error: error.message });
+    }
+  },
+
+  // Load starter templates on demand (for users who already have data)
+  loadStarterTemplates: async () => {
+    set({ isLoading: true, error: null });
+    try {
+      const now = new Date().toISOString();
+      for (const t of sampleTemplates) {
+        const { id: _id, ...rest } = t;
+        await dbHelpers.createTemplate({ ...rest, createdAt: now, updatedAt: now });
+      }
+      await dbHelpers.setSetting('starterTemplatesSeeded', true);
+      const templates = await dbHelpers.getAllTemplates();
+      set({ templates, isLoading: false });
+    } catch (error) {
+      console.error('Error loading starter templates:', error);
+      set({ isLoading: false, error: error.message });
+      throw error;
     }
   },
 

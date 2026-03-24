@@ -24,6 +24,7 @@ import {
   limit as firestoreLimit,
   writeBatch,
 } from 'firebase/firestore';
+import { sampleTemplates } from '../utils/sampleData';
 
 // ─── Helper: get the current user's UID (throws if not logged in) ──────────
 function uid() {
@@ -763,15 +764,11 @@ export async function initializeSampleData() {
       await addDoc(userCol('contacts'), c);
     }
 
-    // Sample templates
-    const templateData = [
-      { name: 'Welcome Email', subject: 'Welcome to {{company_name}}!', body: '<p>Hi {{first_name}},</p><p>Welcome to our platform!</p>', variables: ['first_name', 'company_name'], status: 'active', createdAt: now, updatedAt: now },
-      { name: 'Newsletter Template', subject: '{{newsletter_title}} - {{month}} Edition', body: '<h1>{{newsletter_title}}</h1><p>Dear {{first_name}},</p><p>Check out our latest updates...</p>', variables: ['first_name', 'newsletter_title', 'month'], status: 'active', createdAt: now, updatedAt: now },
-      { name: 'Promotional Campaign', subject: 'Special Offer: {{discount}}% Off!', body: '<p>Hi {{first_name}},</p><p>Get {{discount}}% off! Use code: {{promo_code}}</p>', variables: ['first_name', 'discount', 'promo_code'], status: 'draft', createdAt: now, updatedAt: now },
-    ];
+    // Sample templates — use the 15 professionally designed starter templates
     const templateIds = [];
-    for (const t of templateData) {
-      const ref = await addDoc(userCol('templates'), t);
+    for (const t of sampleTemplates) {
+      const { id: _id, ...rest } = t;
+      const ref = await addDoc(userCol('templates'), { ...rest, createdAt: now, updatedAt: now });
       templateIds.push(ref.id);
     }
 
