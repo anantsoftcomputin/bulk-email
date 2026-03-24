@@ -12,10 +12,10 @@ export const SMTPConfigForm = ({ config, onSave, onClose }) => {
   const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm({
     defaultValues: config || {
       name: '',
-      provider: 'Gmail',
+      provider: 'gmail',
       host: 'smtp.gmail.com',
       port: 587,
-      secure: true,
+      secure: false,
       username: '',
       password: '',
       fromName: '',
@@ -28,12 +28,15 @@ export const SMTPConfigForm = ({ config, onSave, onClose }) => {
 
   const selectedProvider = watch('provider');
 
-  const handleProviderChange = (provider) => {
-    const providerConfig = SMTP_PROVIDERS.find(p => p.name === provider);
+  const handleProviderChange = (providerId) => {
+    const providerConfig = SMTP_PROVIDERS.find(p => p.id === providerId);
     if (providerConfig) {
       setValue('host', providerConfig.host);
       setValue('port', providerConfig.port);
       setValue('secure', providerConfig.secure);
+      if (providerConfig.usernameFixed) {
+        setValue('username', providerConfig.usernameFixed);
+      }
     }
   };
 
@@ -99,7 +102,7 @@ export const SMTPConfigForm = ({ config, onSave, onClose }) => {
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
           >
             {SMTP_PROVIDERS.map(provider => (
-              <option key={provider.name} value={provider.name}>
+              <option key={provider.id} value={provider.id}>
                 {provider.name}
               </option>
             ))}

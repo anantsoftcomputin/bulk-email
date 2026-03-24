@@ -1,5 +1,13 @@
 import React from 'react';
 import { Edit2, Trash2, Zap, Server, CheckCircle } from 'lucide-react';
+import { SMTP_PROVIDERS } from '../../utils/constants';
+
+const PROVIDER_BADGE_COLORS = {
+  'Free Email':    'bg-sky-50 text-sky-700 border-sky-200',
+  'Transactional': 'bg-violet-50 text-violet-700 border-violet-200',
+  'Business Email':'bg-amber-50 text-amber-700 border-amber-200',
+  'Custom':        'bg-gray-100 text-gray-600 border-gray-200',
+};
 
 const SMTPList = ({ configs = [], onSelect, onEdit, onDelete, onTest }) => {
   if (configs.length === 0) {
@@ -16,7 +24,12 @@ const SMTPList = ({ configs = [], onSelect, onEdit, onDelete, onTest }) => {
 
   return (
     <div className="space-y-3">
-      {configs.map(config => (
+      {configs.map(config => {
+        const preset = SMTP_PROVIDERS.find(p => p.id === config.provider);
+        const providerName = preset?.name || config.provider || 'Custom';
+        const badgeColor = PROVIDER_BADGE_COLORS[preset?.category] || PROVIDER_BADGE_COLORS['Custom'];
+
+        return (
         <div
           key={config.id}
           className="card hover:border-primary-200 transition-colors cursor-default"
@@ -31,16 +44,19 @@ const SMTPList = ({ configs = [], onSelect, onEdit, onDelete, onTest }) => {
                   <span className="font-semibold text-gray-900">{config.name}</span>
                   {config.isDefault && (
                     <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-emerald-50 text-emerald-700 text-[11px] font-semibold rounded-full border border-emerald-200">
-                      <CheckCircle size={9} /> Active
+                      <CheckCircle size={9} /> Default
                     </span>
                   )}
-                  <span className="text-xs text-gray-400 capitalize">{config.provider || 'custom'}</span>
+                  <span className={`inline-flex items-center px-1.5 py-0.5 text-[11px] font-medium rounded-full border ${badgeColor}`}>
+                    {providerName}
+                  </span>
                 </div>
                 <div className="text-sm text-gray-500 mt-0.5">
                   {config.host}:{config.port}
+                  {config.secure && <span className="ml-1.5 text-xs text-emerald-600 font-medium">TLS</span>}
                 </div>
                 <div className="text-xs text-gray-400">
-                  {config.username ? config.username.replace(/(?<=.{2}).(?=.*@)/g, '*') : '—'}
+                  {config.fromEmail || config.username || '—'}
                 </div>
               </div>
             </div>
@@ -70,7 +86,8 @@ const SMTPList = ({ configs = [], onSelect, onEdit, onDelete, onTest }) => {
             </div>
           </div>
         </div>
-      ))}
+        );
+      })}
     </div>
   );
 };
